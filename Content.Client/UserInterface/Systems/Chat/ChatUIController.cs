@@ -1096,25 +1096,11 @@ public sealed partial class ChatUIController : UIController
                 _ => "Неизвестно",
             }
             : "Неизвестно";
-        var healthLines = new List<string> { $"Состояние: {status}" };
-        if (_ent.TryGetComponent<DamageableComponent>(target, out var damageable))
-        {
-            healthLines.Add($"Общие повреждения: {damageable.TotalDamage}");
+        var totalDamage = _ent.TryGetComponent<DamageableComponent>(target, out var damageable)
+            ? damageable.TotalDamage.ToString()
+            : "Нет данных";
 
-            foreach (var (groupId, amount) in damageable.DamagePerGroup.OrderByDescending(entry => entry.Value))
-            {
-                if (amount <= 0 || !_prototypeManager.TryIndex<DamageGroupPrototype>(groupId, out var group))
-                    continue;
-
-                healthLines.Add($"{group.LocalizedName}: {amount}");
-            }
-        }
-        else
-        {
-            healthLines.Add("Нет данных об уроне");
-        }
-
-        _combatPanelWindow.SetHealthAnalyzer(string.Join("\\n", healthLines), "");
+        _combatPanelWindow.SetHealthAnalyzer(status, totalDamage);
 
         if (!_ent.TryGetComponent<TargetingComponent>(target, out var targeting))
         {
@@ -1140,8 +1126,11 @@ public sealed partial class ChatUIController : UIController
 
         var spriteSystem = _ent.System<SpriteSystem>();
         var layer = 0;
-        foreach (var (bodyPart, severity) in bodyStatus)
+        foreach (var bodyPart in Enum.GetValues<TargetBodyPart>())
         {
+            var severity = bodyStatus.TryGetValue(bodyPart, out var currentSeverity)
+                ? currentSeverity
+                : default;
             var enumName = Enum.GetName(typeof(TargetBodyPart), bodyPart) ?? "Unknown";
             var baseRsiPath = new ResPath($"/Textures/_Shitmed/Interface/Targeting/Status/{enumName.ToLowerInvariant()}.rsi");
             var rsi = new SpriteSpecifier.Rsi(baseRsiPath, $"{enumName.ToLowerInvariant()}_{(int) severity}");
@@ -1195,8 +1184,14 @@ public sealed partial class ChatUIController : UIController
                     if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem))
                         return;
 
-                    // Medical supplies are used on the player who opened the RP panel,
-                    // not on the selected enemy target.
+                    // Items inside backpacks/equipment containers must be taken out before
+                    // starting their do-after, otherwise the medical action is interrupted.
+                    var hands = _ent.System<HandsSystem>();
+                    if (!hands.IsHolding(user, capturedItem)
+                        && !hands.TryPickupAnyHand(user, capturedItem, checkActionBlocker: false, animate: false))
+                        return;
+
+                    // Medical supplies are used on the player who opened the RP panel.
                     var coordinates = _ent.GetComponent<TransformComponent>(user).Coordinates;
                     _ent.System<SharedInteractionSystem>().InteractUsing(
                         user,
