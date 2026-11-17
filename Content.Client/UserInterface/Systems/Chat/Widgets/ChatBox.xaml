@@ -26,6 +26,7 @@ SPDX-License-Identifier: MIT
             <!-- Goobstation Change - Output Panel -->
             <goobcontrols:CustomOutputPanel Name="Contents" HorizontalExpand="True" VerticalExpand="True" Margin="8 8 8 4" />
             <BoxContainer Orientation="Horizontal" SeparationOverride="4" HorizontalExpand="True">
+                <Button Name="CombatPanelModeButton" Text="РП: ВЫКЛ" MinWidth="64" Margin="2" />
                 <controls:ChatInputBox HorizontalExpand="True" Name="ChatInput" Access="Public" Margin="2"/>
             </BoxContainer>
         </BoxContainer>

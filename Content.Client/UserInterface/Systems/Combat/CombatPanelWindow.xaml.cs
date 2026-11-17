@@ -12,6 +12,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private string? _selectedAction;
     private string? _selectedPart;
     private EntityUid? _target;
+    private string _targetName = "неизвестная цель";
     public EntityUid? Target => _target;
 
     public event Action<string>? EmoteRequested;
@@ -39,11 +40,19 @@ public sealed partial class CombatPanelWindow : FancyWindow
     /// Shows only actions supported by the item in the active hand.
     /// Empty hands expose unarmed actions; guns expose shooting; melee weapons expose stabbing.
     /// </summary>
-    public void SetTarget(EntityUid target)
+    public void SetTarget(EntityUid target, string targetName)
     {
         _target = target;
+        _targetName = targetName;
+        TargetNameLabel.Text = $"Цель: {targetName}";
         _selectedPart = null;
+        UpdatePartButtonHighlights();
         UpdateSelection();
+    }
+
+    public void SetHealthAnalyzer(string status, string damage)
+    {
+        HealthAnalyzerLabel.Text = $"Состояние: {status}\nОбщий урон: {damage}";
     }
 
     public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)
@@ -66,7 +75,29 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private void SelectPart(string part)
     {
         _selectedPart = part;
+        UpdatePartButtonHighlights();
         UpdateSelection();
+    }
+
+    private void UpdatePartButtonHighlights()
+    {
+        var buttons = new[]
+        {
+            (HeadButton, "head"),
+            (ChestButton, "chest"),
+            (LeftArmButton, "left arm"),
+            (RightArmButton, "right arm"),
+            (LeftLegButton, "left leg"),
+            (RightLegButton, "right leg"),
+        };
+
+        foreach (var (button, part) in buttons)
+        {
+            if (part == _selectedPart)
+                button.StyleClasses.Add("positive");
+            else
+                button.StyleClasses.Remove("positive");
+        }
     }
 
     private void UpdateSelection()
@@ -96,10 +127,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         var message = _selectedAction switch
         {
-            "shoots" => $"shoots the enemy in the {_selectedPart}",
-            "stabs" => $"stabs the enemy in the {_selectedPart}",
-            "punches" => $"punches the enemy in the {_selectedPart}",
-            "kicks" => $"kicks the enemy in the {_selectedPart}",
+            "shoots" => $"shoots {_targetName} in the {_selectedPart}",
+            "stabs" => $"stabs {_targetName} in the {_selectedPart}",
+            "punches" => $"punches {_targetName} in the {_selectedPart}",
+            "kicks" => $"kicks {_targetName} in the {_selectedPart}",
             _ => null,
         };
 

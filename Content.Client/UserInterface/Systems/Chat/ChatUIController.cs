@@ -23,6 +23,10 @@ using Content.Shared._Starlight.CollectiveMind; // Goobstation - Starlight colle
 using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
+using Content.Shared.Damage;
+using Content.Shared.IdentityManagement;
+using Content.Shared.Mobs;
+using Content.Shared.Mobs.Components;
 using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Damage.ForceSay;
@@ -150,6 +154,15 @@ public sealed partial class ChatUIController : UIController
 
     private readonly HashSet<ChatBox> _chats = new();
     private CombatPanelWindow? _combatPanelWindow;
+    private bool _combatPanelModeEnabled;
+
+    public bool CombatPanelModeEnabled => _combatPanelModeEnabled;
+
+    public bool ToggleCombatPanelMode()
+    {
+        _combatPanelModeEnabled = !_combatPanelModeEnabled;
+        return _combatPanelModeEnabled;
+    }
     public IReadOnlySet<ChatBox> Chats => _chats;
 
     /// <summary>
@@ -1027,8 +1040,23 @@ public sealed partial class ChatUIController : UIController
         var hasMeleeWeapon = !hasGun
             && heldItem is { } melee && _ent.HasComponent<MeleeWeaponComponent>(melee);
 
-        _combatPanelWindow.SetTarget(target);
+        var targetName = Identity.Name(target, _ent);
+        _combatPanelWindow.SetTarget(target, targetName);
         _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
+
+        var status = _ent.TryGetComponent<MobStateComponent>(target, out var mobState)
+            ? mobState.CurrentState switch
+            {
+                MobState.Alive => "Жив",
+                MobState.Critical => "Критическое состояние",
+                MobState.Dead => "Мёртв",
+                _ => "Неизвестно",
+            }
+            : "Неизвестно";
+        var damage = _ent.TryGetComponent<DamageableComponent>(target, out var damageable)
+            ? damageable.TotalDamage.ToString()
+            : "Нет данных";
+        _combatPanelWindow.SetHealthAnalyzer(status, damage);
         _combatPanelWindow.Open();
     }
 
