@@ -25,6 +25,10 @@ using Content.Shared.CCVar;
 using Content.Shared.Chat;
 using Content.Shared.Damage;
 using Content.Shared.IdentityManagement;
+using Content.Shared.Inventory;
+using Content.Shared.Interaction;
+using Content.Shared._Shitmed.Targeting;
+using Content.Shared._Shitmed.Medical.Surgery.Wounds;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Weapons.Melee;
@@ -36,6 +40,7 @@ using Content.Shared.Radio;
 using Content.Shared.Roles.RoleCodeword;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
+using Robust.Client.GameObjects;
 using Robust.Client.Input;
 using Robust.Client.Player;
 using Robust.Client.State;
@@ -51,6 +56,7 @@ using Robust.Shared.Prototypes;
 using Robust.Shared.Replays;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
+using Robust.Shared.Graphics.RSI;
 
 
 namespace Content.Client.UserInterface.Systems.Chat;
@@ -155,6 +161,10 @@ public sealed partial class ChatUIController : UIController
     private readonly HashSet<ChatBox> _chats = new();
     private CombatPanelWindow? _combatPanelWindow;
     private bool _combatPanelModeEnabled;
+    private TimeSpan _combatPanelRefreshTimer;
+    private EntityUid? _healthDollEntity;
+    private Dictionary<TargetBodyPart, WoundableSeverity>? _lastBodyStatus;
+    private static readonly EntProtoId HealthDollPrototype = "AlertSpriteView";
 
     public bool CombatPanelModeEnabled => _combatPanelModeEnabled;
 
@@ -1022,6 +1032,20 @@ public sealed partial class ChatUIController : UIController
         _chats.Remove(chat);
     }
 
+    public override void FrameUpdate(FrameEventArgs args)
+    {
+        if (_combatPanelWindow is not { IsOpen: true, Target: { } target } || !_ent.EntityExists(target))
+            return;
+
+        _combatPanelRefreshTimer += TimeSpan.FromSeconds(args.DeltaSeconds);
+        if (_combatPanelRefreshTimer < TimeSpan.FromSeconds(0.5))
+            return;
+
+        _combatPanelRefreshTimer = TimeSpan.Zero;
+        UpdateCombatPanelHealth(target);
+        UpdateCombatPanelMedicalItems(target);
+    }
+
     public void OpenCombatPanel(EntityUid target)
     {
         if (_combatPanelWindow == null)
@@ -1044,6 +1068,18 @@ public sealed partial class ChatUIController : UIController
         _combatPanelWindow.SetTarget(target, targetName);
         _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
 
+        _lastBodyStatus = null;
+        _combatPanelRefreshTimer = TimeSpan.Zero;
+        UpdateCombatPanelHealth(target);
+        UpdateCombatPanelMedicalItems(target);
+        _combatPanelWindow.Open();
+    }
+
+    private void UpdateCombatPanelHealth(EntityUid target)
+    {
+        if (_combatPanelWindow == null || !_ent.EntityExists(target))
+            return;
+
         var status = _ent.TryGetComponent<MobStateComponent>(target, out var mobState)
             ? mobState.CurrentState switch
             {
@@ -1057,7 +1093,90 @@ public sealed partial class ChatUIController : UIController
             ? damageable.TotalDamage.ToString()
             : "Нет данных";
         _combatPanelWindow.SetHealthAnalyzer(status, damage);
-        _combatPanelWindow.Open();
+
+        if (!_ent.TryGetComponent<TargetingComponent>(target, out var targeting))
+        {
+            _combatPanelWindow.SetHealthDoll(null);
+            return;
+        }
+
+        var bodyStatus = targeting.BodyStatus;
+        if (_lastBodyStatus != null && _lastBodyStatus.SequenceEqual(bodyStatus))
+            return;
+
+        _lastBodyStatus = new Dictionary<TargetBodyPart, WoundableSeverity>(bodyStatus);
+        if (_healthDollEntity is { } oldDoll && _ent.EntityExists(oldDoll))
+            _ent.QueueDeleteEntity(oldDoll);
+
+        _healthDollEntity = _ent.Spawn(HealthDollPrototype);
+        if (!_ent.TryGetComponent<SpriteComponent>(_healthDollEntity.Value, out var sprite))
+            return;
+
+        var spriteSystem = _ent.System<SpriteSystem>();
+        var layer = 0;
+        foreach (var (bodyPart, severity) in bodyStatus)
+        {
+            var enumName = Enum.GetName(typeof(TargetBodyPart), bodyPart) ?? "Unknown";
+            var baseRsiPath = new ResPath($"/Textures/_Shitmed/Interface/Targeting/Status/{enumName.ToLowerInvariant()}.rsi");
+            var rsi = new SpriteSpecifier.Rsi(baseRsiPath, $"{enumName.ToLowerInvariant()}_{(int) severity}");
+            sprite.AddLayer(spriteSystem.Frame0(rsi));
+            sprite.LayerSetScale(layer, new Vector2(3f, 3f));
+            layer++;
+        }
+
+        _combatPanelWindow.SetHealthDoll(_healthDollEntity);
+    }
+
+    private void UpdateCombatPanelMedicalItems(EntityUid target)
+    {
+        if (_combatPanelWindow == null
+            || _player.LocalEntity is not { } user
+            || !_ent.TryGetComponent<InventoryComponent>(user, out var inventory))
+        {
+            _combatPanelWindow?.SetMedicalItems(Array.Empty<(string Name, Action Use)>());
+            return;
+        }
+
+        var items = new List<(string Name, Action Use)>();
+        var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
+        while (slots.NextItem(out var item))
+        {
+            var itemName = Identity.Name(item, _ent);
+            var normalized = itemName.ToLowerInvariant();
+            if (!IsMedicalSupply(normalized))
+                continue;
+
+            var capturedItem = item;
+            var capturedTarget = target;
+            items.Add((itemName, () =>
+            {
+                if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem) || !_ent.EntityExists(capturedTarget))
+                    return;
+
+                var coordinates = _ent.GetComponent<TransformComponent>(capturedTarget).Coordinates;
+                _ent.System<SharedInteractionSystem>().InteractUsing(
+                    user,
+                    capturedItem,
+                    capturedTarget,
+                    coordinates,
+                    checkCanUse: false);
+            }));
+        }
+
+        _combatPanelWindow.SetMedicalItems(items);
+    }
+
+    private static bool IsMedicalSupply(string itemName)
+    {
+        return itemName.Contains("бинт")
+            || itemName.Contains("шприц")
+            || itemName.Contains("ушиб")
+            || itemName.Contains("brutepack")
+            || itemName.Contains("gauze")
+            || itemName.Contains("ointment")
+            || itemName.Contains("medipen")
+            || itemName.Contains("syringe")
+            || itemName.Contains("bruise");
     }
 
     public ChatSelectChannel GetPreferredChannel()
