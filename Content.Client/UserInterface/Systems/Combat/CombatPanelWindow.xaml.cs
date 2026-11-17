@@ -59,6 +59,14 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)
     {
+        // FrameUpdate calls this repeatedly. Do not clear the player's current selection
+        // unless the available weapon actions actually changed.
+        if (ShootButton.Visible == hasGun
+            && StabButton.Visible == (!hasGun && hasMeleeWeapon)
+            && PunchButton.Visible == (!hasGun && !hasMeleeWeapon)
+            && KickButton.Visible == (!hasGun && !hasMeleeWeapon))
+            return;
+
         ShootButton.Visible = hasGun;
         StabButton.Visible = !hasGun && hasMeleeWeapon;
         PunchButton.Visible = !hasGun && !hasMeleeWeapon;
