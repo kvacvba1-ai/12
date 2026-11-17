@@ -1163,14 +1163,14 @@ public sealed partial class ChatUIController : UIController
         var spriteSystem = _ent.System<SpriteSystem>();
         // Append layers after any layers already defined by the prototype. Starting at
         // zero can leave the final body-part layer (RightFoot) without its scale applied.
-        var layer = sprite.AllLayers.Count;
+        var layer = sprite.AllLayers.Count();
         // TargetBodyPart is a flags enum; Enum.GetValues also returns composite masks
         // (Hands, Arms, All, etc.) that do not have individual RSI files.
         foreach (var bodyPart in SharedTargetingSystem.GetValidParts())
         {
             var severity = bodyStatus.TryGetValue(bodyPart, out var currentSeverity)
                 ? currentSeverity
-                : WoundableSeverity.Perfect;
+                : default;
             var enumName = Enum.GetName(typeof(TargetBodyPart), bodyPart) ?? "Unknown";
             var baseRsiPath = new ResPath($"/Textures/_Shitmed/Interface/Targeting/Status/{enumName.ToLowerInvariant()}.rsi");
             var rsi = new SpriteSpecifier.Rsi(baseRsiPath, $"{enumName.ToLowerInvariant()}_{(int) severity}");
