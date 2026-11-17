@@ -16,6 +16,7 @@ using Content.Client.Roles;
 using Content.Client.Stylesheets;
 using Content.Client.UserInterface.Screens;
 using Content.Client.UserInterface.Systems.Chat.Widgets;
+using Content.Client.UserInterface.Systems.Combat;
 using Content.Client.UserInterface.Systems.Gameplay;
 using Content.Shared._Starlight.CollectiveMind; // Goobstation - Starlight collective mind port
 using Content.Shared.Administration;
@@ -145,6 +146,7 @@ public sealed partial class ChatUIController : UIController
         = new();
 
     private readonly HashSet<ChatBox> _chats = new();
+    private CombatPanelWindow? _combatPanelWindow;
     public IReadOnlySet<ChatBox> Chats => _chats;
 
     /// <summary>
@@ -997,11 +999,28 @@ public sealed partial class ChatUIController : UIController
     public void RegisterChat(ChatBox chat)
     {
         _chats.Add(chat);
+        chat.CombatPanelPressed += ToggleCombatPanel;
     }
 
     public void UnregisterChat(ChatBox chat)
     {
         _chats.Remove(chat);
+        chat.CombatPanelPressed -= ToggleCombatPanel;
+    }
+
+    private void ToggleCombatPanel()
+    {
+        if (_combatPanelWindow == null)
+        {
+            _combatPanelWindow = UIManager.CreateWindow<CombatPanelWindow>();
+            _combatPanelWindow.EmoteRequested += message =>
+                _manager.SendMessage(message, ChatSelectChannel.Emotes);
+        }
+
+        if (_combatPanelWindow.IsOpen)
+            _combatPanelWindow.Close();
+        else
+            _combatPanelWindow.Open();
     }
 
     public ChatSelectChannel GetPreferredChannel()
