@@ -1118,8 +1118,8 @@ public sealed partial class ChatUIController : UIController
 
         if (!_ent.TryGetComponent<TargetingComponent>(target, out var targeting))
         {
-            if (_healthDollEntity is { } oldDoll && _ent.EntityExists(oldDoll))
-                _ent.QueueDeleteEntity(oldDoll);
+            if (_healthDollEntity is { } missingTargetDoll && _ent.EntityExists(missingTargetDoll))
+                _ent.QueueDeleteEntity(missingTargetDoll);
             _healthDollEntity = null;
             _lastBodyStatus = null;
             _combatPanelWindow.SetHealthDoll(null);
