@@ -26,6 +26,7 @@ using Content.Shared.Chat;
 using Content.Shared.Damage;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Inventory;
+using Content.Shared.Storage;
 using Content.Shared.Interaction;
 using Content.Shared._Shitmed.Targeting;
 using Content.Shared._Shitmed.Medical.Surgery.Wounds;
@@ -1147,32 +1148,51 @@ public sealed partial class ChatUIController : UIController
         }
 
         var items = new List<(string Name, Action Use)>();
+        var pendingStorage = new Queue<EntityUid>();
+        var visited = new HashSet<EntityUid>();
         var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
         while (slots.NextItem(out var item))
+            AddMedicalItem(item);
+
+        while (pendingStorage.TryDequeue(out var storageEntity))
         {
-            var itemName = Identity.Name(item, _ent);
-            var normalized = itemName.ToLowerInvariant();
-            if (!IsMedicalSupply(normalized))
+            if (!_ent.TryGetComponent<StorageComponent>(storageEntity, out var storage))
                 continue;
 
-            var capturedItem = item;
-            var capturedTarget = target;
-            items.Add((itemName, () =>
-            {
-                if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem) || !_ent.EntityExists(capturedTarget))
-                    return;
-
-                var coordinates = _ent.GetComponent<TransformComponent>(capturedTarget).Coordinates;
-                _ent.System<SharedInteractionSystem>().InteractUsing(
-                    user,
-                    capturedItem,
-                    capturedTarget,
-                    coordinates,
-                    checkCanUse: false);
-            }));
+            foreach (var storedItem in storage.StoredItems.Keys)
+                AddMedicalItem(storedItem);
         }
 
         _combatPanelWindow.SetMedicalItems(items);
+
+        void AddMedicalItem(EntityUid item)
+        {
+            if (!visited.Add(item) || !_ent.EntityExists(item))
+                return;
+
+            var itemName = Identity.Name(item, _ent);
+            if (IsMedicalSupply(itemName.ToLowerInvariant()))
+            {
+                var capturedItem = item;
+                var capturedTarget = target;
+                items.Add((itemName, () =>
+                {
+                    if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem) || !_ent.EntityExists(capturedTarget))
+                        return;
+
+                    var coordinates = _ent.GetComponent<TransformComponent>(capturedTarget).Coordinates;
+                    _ent.System<SharedInteractionSystem>().InteractUsing(
+                        user,
+                        capturedItem,
+                        capturedTarget,
+                        coordinates,
+                        checkCanUse: false);
+                }));
+            }
+
+            if (_ent.HasComponent<StorageComponent>(item))
+                pendingStorage.Enqueue(item);
+        }
     }
 
     private static bool IsMedicalSupply(string itemName)
