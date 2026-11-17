@@ -1100,7 +1100,6 @@ public sealed partial class ChatUIController : UIController
         if (_ent.TryGetComponent<DamageableComponent>(target, out var damageable))
         {
             healthLines.Add($"Общие повреждения: {damageable.TotalDamage}");
-            healthLines.Add($"Суммарный урон: {damageable.TotalDamage}");
 
             foreach (var (groupId, amount) in damageable.DamagePerGroup.OrderByDescending(entry => entry.Value))
             {
