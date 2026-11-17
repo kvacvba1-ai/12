@@ -137,6 +137,9 @@ public sealed partial class CombatPanelWindow : FancyWindow
         foreach (var child in MedicalItemsContainer.Children)
             if (child is Button button)
                 button.Disabled = _remainingActions == 0;
+        foreach (var child in AmmunitionContainer.Children)
+            if (child is Button button)
+                button.Disabled = _remainingActions == 0;
     }
 
     private void SelectAction(string action)
