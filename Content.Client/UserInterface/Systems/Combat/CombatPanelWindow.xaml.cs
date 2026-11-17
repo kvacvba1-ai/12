@@ -14,6 +14,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private string? _selectedPart;
     private EntityUid? _target;
     private string _targetName = "неизвестная цель";
+    private string? _weaponName;
     private const int MaxActionsPerTurn = 2;
     private int _remainingActions = MaxActionsPerTurn;
     public EntityUid? Target => _target;
@@ -58,9 +59,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
         UpdateSelection();
     }
 
-    public void SetWeaponInfo(string info)
+    public void SetWeaponInfo(string info, string? weaponName = null)
     {
         WeaponInfoLabel.Text = info;
+        _weaponName = weaponName;
     }
 
     public void SetHealthAnalyzer(string status, string damage)
@@ -264,8 +266,8 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         var message = _selectedAction switch
         {
-            "shoots" => $"shoots {_targetName} in the {_selectedPart}",
-            "stabs" => $"stabs {_targetName} in the {_selectedPart}",
+            "shoots" => $"shoots {_targetName} in the {_selectedPart} using {_weaponName ?? "a firearm"}",
+            "stabs" => $"stabs {_targetName} in the {_selectedPart} using {_weaponName ?? "a weapon"}",
             "punches" => $"punches {_targetName} in the {_selectedPart}",
             "kicks" => $"kicks {_targetName} in the {_selectedPart}",
             _ => null,
