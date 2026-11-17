@@ -1215,6 +1215,9 @@ public sealed partial class ChatUIController : UIController
     {
         return itemName.Contains("бинт")
             || itemName.Contains("шприц")
+            || itemName.Contains("медипен")
+            || itemName.Contains("мазь")
+            || itemName.Contains("ожог")
             || itemName.Contains("ушиб")
             || itemName.Contains("brutepack")
             || itemName.Contains("gauze")
