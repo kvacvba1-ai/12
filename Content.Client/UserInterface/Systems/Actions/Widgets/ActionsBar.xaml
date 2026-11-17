@@ -19,5 +19,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             Name="ActionsContainer"
             Access="Public"
             Rows="1"/>
+        <Button Name="CombatPanelModeButton"
+                Text="РП: ВЫКЛ"
+                MinSize="64 36"
+                HorizontalAlignment="Center"
+                Margin="0 6 0 0"/>
     </BoxContainer>
 </widgets:ActionsBar>
