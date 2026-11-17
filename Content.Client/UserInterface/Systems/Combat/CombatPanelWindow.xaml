@@ -9,6 +9,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     MinSize="300 520">
     <BoxContainer Orientation="Vertical" SeparationOverride="6" HorizontalExpand="True">
         <Label Name="TargetNameLabel" Text="Цель: неизвестно" />
+        <Label Name="WeaponInfoLabel" Text="В руках: нет оружия" />
         <Label Text="ДЕЙСТВИЕ" />
         <BoxContainer Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True">
             <Button Name="ShootButton" Text="Выстрелить" />
@@ -36,5 +37,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <Label Name="HealthAnalyzerLabel" Text="Нет данных" HorizontalExpand="True" />
         </BoxContainer>
         <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
+        <PanelContainer StyleClasses="LowDivider" />
+        <Button Name="AmmunitionToggleButton" Text="▣ АММУНИЦИЯ" />
+        <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
+        <PanelContainer StyleClasses="LowDivider" />
+        <Label Name="TurnCountLabel" Text="Действий осталось: 2/2" />
+        <Label Name="TurnStateLabel" Text="Ваш ход" />
     </BoxContainer>
 </controls:FancyWindow>
