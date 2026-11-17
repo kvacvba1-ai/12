@@ -14,6 +14,8 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private string? _selectedPart;
     private EntityUid? _target;
     private string _targetName = "неизвестная цель";
+    private const int MaxActionsPerTurn = 2;
+    private int _remainingActions = MaxActionsPerTurn;
     public EntityUid? Target => _target;
 
     public event Action<string>? EmoteRequested;
@@ -35,6 +37,8 @@ public sealed partial class CombatPanelWindow : FancyWindow
         RightLegButton.OnPressed += _ => SelectPart("right leg");
 
         PerformButton.OnPressed += _ => Perform();
+        AmmunitionToggleButton.OnPressed += _ =>
+            AmmunitionContainer.Visible = !AmmunitionContainer.Visible;
     }
 
     /// <summary>
@@ -47,9 +51,16 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _targetName = targetName;
         TargetNameLabel.Text = $"Цель: {targetName}";
         _selectedPart = null;
+        _remainingActions = MaxActionsPerTurn;
+        UpdateTurnControls();
         UpdatePartButtonHighlights();
         UpdateActionButtonHighlights();
         UpdateSelection();
+    }
+
+    public void SetWeaponInfo(string info)
+    {
+        WeaponInfoLabel.Text = info;
     }
 
     public void SetHealthAnalyzer(string status, string damage)
@@ -65,7 +76,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
             && StabButton.Visible == (!hasGun && hasMeleeWeapon)
             && PunchButton.Visible == (!hasGun && !hasMeleeWeapon)
             && KickButton.Visible == (!hasGun && !hasMeleeWeapon))
+        {
+            UpdateTurnControls();
             return;
+        }
 
         ShootButton.Visible = hasGun;
         StabButton.Visible = !hasGun && hasMeleeWeapon;
@@ -78,10 +92,58 @@ public sealed partial class CombatPanelWindow : FancyWindow
         UpdatePartButtonHighlights();
         UpdateActionButtonHighlights();
         UpdateSelection();
+        UpdateTurnControls();
+    }
+
+    public void SetAmmunitionItems(IEnumerable<(string Name, string Details, Action Use)> items)
+    {
+        AmmunitionContainer.RemoveAllChildren();
+        foreach (var (name, details, use) in items)
+        {
+            var button = new Button
+            {
+                Text = $"{name} — {details}",
+                HorizontalExpand = true,
+                Disabled = _remainingActions <= 0 && details.Contains("Зарядить"),
+            };
+            button.OnPressed += _ => use();
+            AmmunitionContainer.AddChild(button);
+        }
+        AmmunitionToggleButton.Disabled = AmmunitionContainer.ChildCount == 0;
+        if (AmmunitionContainer.ChildCount == 0)
+            AmmunitionContainer.Visible = false;
+    }
+
+    public void ConsumeTurn()
+    {
+        if (_remainingActions <= 0)
+            return;
+
+        _remainingActions--;
+        UpdateTurnControls();
+        UpdateSelection();
+    }
+
+    private void UpdateTurnControls()
+    {
+        TurnCountLabel.Text = $"Действий осталось: {_remainingActions}/{MaxActionsPerTurn}";
+        TurnStateLabel.Text = _remainingActions == 0 ? "Ожидание ответа соперника" : "Ваш ход";
+        ShootButton.Disabled = _remainingActions == 0;
+        StabButton.Disabled = _remainingActions == 0;
+        PunchButton.Disabled = _remainingActions == 0;
+        KickButton.Disabled = _remainingActions == 0;
+        PerformButton.Disabled = _remainingActions == 0 || _selectedAction == null
+            || _selectedAction != null && _selectedPart == null;
+        foreach (var child in MedicalItemsContainer.Children)
+            if (child is Button button)
+                button.Disabled = _remainingActions == 0;
     }
 
     private void SelectAction(string action)
     {
+        if (_remainingActions <= 0)
+            return;
+
         _selectedAction = action;
         _selectedPart = null;
         BodyPartSelectionContainer.Visible = true;
@@ -154,7 +216,14 @@ public sealed partial class CombatPanelWindow : FancyWindow
                 Text = $"Использовать {name}",
                 HorizontalExpand = true,
             };
-            button.OnPressed += _ => use();
+            button.Disabled = _remainingActions <= 0;
+            button.OnPressed += _ =>
+            {
+                if (_remainingActions <= 0)
+                    return;
+                use();
+                ConsumeTurn();
+            };
             MedicalItemsContainer.AddChild(button);
         }
         MedicalItemsContainer.Visible = MedicalItemsContainer.ChildCount > 0;
@@ -163,7 +232,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private void UpdateSelection()
     {
         var needsPart = _selectedAction != null;
-        PerformButton.Disabled = _selectedAction == null || needsPart && _selectedPart == null;
+        PerformButton.Disabled = _remainingActions <= 0 || _selectedAction == null || needsPart && _selectedPart == null;
         SelectionLabel.Text = _selectedAction == null
             ? "Выбери действие"
             : needsPart && _selectedPart == null
@@ -187,7 +256,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     private void Perform()
     {
-        if (_selectedAction == null || _selectedPart == null)
+        if (_remainingActions <= 0 || _selectedAction == null || _selectedPart == null)
             return;
 
         var message = _selectedAction switch
@@ -200,6 +269,9 @@ public sealed partial class CombatPanelWindow : FancyWindow
         };
 
         if (message != null)
+        {
             EmoteRequested?.Invoke(message);
+            ConsumeTurn();
+        }
     }
 }
