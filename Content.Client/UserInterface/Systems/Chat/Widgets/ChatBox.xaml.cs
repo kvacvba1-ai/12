@@ -68,18 +68,6 @@ public partial class ChatBox : UIWidget
         ChatSearch.OnSearchClosed += CloseSearch;
         // ADT-Tweak end
         _controller = UserInterfaceManager.GetUIController<ChatUIController>();
-        CombatPanelModeButton.Text = _controller.CombatPanelModeEnabled ? "РП: ВКЛ" : "РП: ВЫКЛ";
-        if (_controller.CombatPanelModeEnabled)
-            CombatPanelModeButton.StyleClasses.Add("positive");
-        CombatPanelModeButton.OnPressed += _ =>
-        {
-            var enabled = _controller.ToggleCombatPanelMode();
-            CombatPanelModeButton.Text = enabled ? "РП: ВКЛ" : "РП: ВЫКЛ";
-            if (enabled)
-                CombatPanelModeButton.StyleClasses.Add("positive");
-            else
-                CombatPanelModeButton.StyleClasses.Remove("positive");
-        };
         _controller.MessageAdded += OnMessageAdded;
         _controller.HighlightsUpdated += OnHighlightsUpdated;
         _controller.RegisterChat(this);
