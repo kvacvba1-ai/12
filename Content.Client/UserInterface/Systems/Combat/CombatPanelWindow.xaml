@@ -30,7 +30,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         <Label Name="SelectionLabel" Text="Выбери действие и часть тела" />
         <Button Name="PerformButton" Text="Выполнить" Disabled="True" />
         <PanelContainer StyleClasses="LowDivider" />
-        <PanelContainer StyleClasses="LowDivider" />
         <Label Text="АНАЛИЗАТОР ЗДОРОВЬЯ" />
         <BoxContainer Orientation="Horizontal" SeparationOverride="8" HorizontalExpand="True">
             <SpriteView Name="HealthDollView" SetSize="72 112" Visible="False" />
