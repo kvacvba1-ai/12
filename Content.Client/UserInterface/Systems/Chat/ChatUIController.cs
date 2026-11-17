@@ -25,6 +25,7 @@ using Content.Shared.CCVar;
 using Content.Shared.Chat;
 using Content.Shared.Damage;
 using Content.Shared.IdentityManagement;
+using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Ranged.Components;
@@ -1044,7 +1045,13 @@ public sealed partial class ChatUIController : UIController
         _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
 
         var status = _ent.TryGetComponent<MobStateComponent>(target, out var mobState)
-            ? mobState.CurrentState.ToString()
+            ? mobState.CurrentState switch
+            {
+                MobState.Alive => "Жив",
+                MobState.Critical => "Критическое состояние",
+                MobState.Dead => "Мёртв",
+                _ => "Неизвестно",
+            }
             : "Неизвестно";
         var damage = _ent.TryGetComponent<DamageableComponent>(target, out var damageable)
             ? damageable.TotalDamage.ToString()
