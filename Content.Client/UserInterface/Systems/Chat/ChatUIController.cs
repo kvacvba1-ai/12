@@ -1190,17 +1190,18 @@ public sealed partial class ChatUIController : UIController
             if (IsMedicalSupply(itemName.ToLowerInvariant()))
             {
                 var capturedItem = item;
-                var capturedTarget = target;
                 items.Add((itemName, () =>
                 {
-                    if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem) || !_ent.EntityExists(capturedTarget))
+                    if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem))
                         return;
 
-                    var coordinates = _ent.GetComponent<TransformComponent>(capturedTarget).Coordinates;
+                    // Medical supplies are used on the player who opened the RP panel,
+                    // not on the selected enemy target.
+                    var coordinates = _ent.GetComponent<TransformComponent>(user).Coordinates;
                     _ent.System<SharedInteractionSystem>().InteractUsing(
                         user,
                         capturedItem,
-                        capturedTarget,
+                        user,
                         coordinates,
                         checkCanUse: false);
                 }));
