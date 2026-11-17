@@ -24,6 +24,7 @@ using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
 using Content.Shared.Damage;
+using Content.Shared.Damage.Prototypes;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Inventory;
 using Content.Shared.Storage;
@@ -1095,10 +1096,26 @@ public sealed partial class ChatUIController : UIController
                 _ => "Неизвестно",
             }
             : "Неизвестно";
-        var damage = _ent.TryGetComponent<DamageableComponent>(target, out var damageable)
-            ? damageable.TotalDamage.ToString()
-            : "Нет данных";
-        _combatPanelWindow.SetHealthAnalyzer(status, damage);
+        var healthLines = new List<string> { $"Состояние: {status}" };
+        if (_ent.TryGetComponent<DamageableComponent>(target, out var damageable))
+        {
+            healthLines.Add($"Общие повреждения: {damageable.TotalDamage}");
+            healthLines.Add($"Суммарный урон: {damageable.TotalDamage}");
+
+            foreach (var (groupId, amount) in damageable.DamagePerGroup.OrderByDescending(entry => entry.Value))
+            {
+                if (amount <= 0 || !_prototypeManager.TryIndex<DamageGroupPrototype>(groupId, out var group))
+                    continue;
+
+                healthLines.Add($"{group.LocalizedName}: {amount}");
+            }
+        }
+        else
+        {
+            healthLines.Add("Нет данных об уроне");
+        }
+
+        _combatPanelWindow.SetHealthAnalyzer(string.Join("\\n", healthLines), "");
 
         if (!_ent.TryGetComponent<TargetingComponent>(target, out var targeting))
         {
@@ -1159,7 +1176,7 @@ public sealed partial class ChatUIController : UIController
             if (!_ent.TryGetComponent<StorageComponent>(storageEntity, out var storage))
                 continue;
 
-            foreach (var storedItem in storage.StoredItems.Keys)
+            foreach (var storedItem in storage.Container.ContainedEntities)
                 AddMedicalItem(storedItem);
         }
 
