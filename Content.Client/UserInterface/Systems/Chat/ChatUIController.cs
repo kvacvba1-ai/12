@@ -656,6 +656,17 @@ public sealed partial class ChatUIController : UIController
     public override void FrameUpdate(FrameEventArgs delta)
     {
         UpdateQueuedSpeechBubbles(delta);
+
+        if (_combatPanelWindow is not { IsOpen: true, Target: { } target } || !_ent.EntityExists(target))
+            return;
+
+        _combatPanelRefreshTimer += TimeSpan.FromSeconds(delta.DeltaSeconds);
+        if (_combatPanelRefreshTimer < TimeSpan.FromSeconds(0.5))
+            return;
+
+        _combatPanelRefreshTimer = TimeSpan.Zero;
+        UpdateCombatPanelHealth(target);
+        UpdateCombatPanelMedicalItems(target);
     }
 
     private void UpdateQueuedSpeechBubbles(FrameEventArgs delta)
@@ -1030,20 +1041,6 @@ public sealed partial class ChatUIController : UIController
     public void UnregisterChat(ChatBox chat)
     {
         _chats.Remove(chat);
-    }
-
-    public override void FrameUpdate(FrameEventArgs args)
-    {
-        if (_combatPanelWindow is not { IsOpen: true, Target: { } target } || !_ent.EntityExists(target))
-            return;
-
-        _combatPanelRefreshTimer += TimeSpan.FromSeconds(args.DeltaSeconds);
-        if (_combatPanelRefreshTimer < TimeSpan.FromSeconds(0.5))
-            return;
-
-        _combatPanelRefreshTimer = TimeSpan.Zero;
-        UpdateCombatPanelHealth(target);
-        UpdateCombatPanelMedicalItems(target);
     }
 
     public void OpenCombatPanel(EntityUid target)
