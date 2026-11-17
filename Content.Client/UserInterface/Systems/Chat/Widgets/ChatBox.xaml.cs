@@ -70,15 +70,15 @@ public partial class ChatBox : UIWidget
         _controller = UserInterfaceManager.GetUIController<ChatUIController>();
         CombatPanelModeButton.Text = _controller.CombatPanelModeEnabled ? "RP: ON" : "RP: OFF";
         if (_controller.CombatPanelModeEnabled)
-            CombatPanelModeButton.StyleClasses.Add("ButtonColorGreen");
+            CombatPanelModeButton.StyleClasses.Add("positive");
         CombatPanelModeButton.OnPressed += _ =>
         {
             var enabled = _controller.ToggleCombatPanelMode();
             CombatPanelModeButton.Text = enabled ? "RP: ON" : "RP: OFF";
             if (enabled)
-                CombatPanelModeButton.StyleClasses.Add("ButtonColorGreen");
+                CombatPanelModeButton.StyleClasses.Add("positive");
             else
-                CombatPanelModeButton.StyleClasses.Remove("ButtonColorGreen");
+                CombatPanelModeButton.StyleClasses.Remove("positive");
         };
         _controller.MessageAdded += OnMessageAdded;
         _controller.HighlightsUpdated += OnHighlightsUpdated;
