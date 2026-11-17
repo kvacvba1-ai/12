@@ -1161,7 +1161,9 @@ public sealed partial class ChatUIController : UIController
             return;
 
         var spriteSystem = _ent.System<SpriteSystem>();
-        var layer = 0;
+        // Append layers after any layers already defined by the prototype. Starting at
+        // zero can leave the final body-part layer (RightFoot) without its scale applied.
+        var layer = sprite.AllLayers.Count;
         // TargetBodyPart is a flags enum; Enum.GetValues also returns composite masks
         // (Hands, Arms, All, etc.) that do not have individual RSI files.
         foreach (var bodyPart in SharedTargetingSystem.GetValidParts())
