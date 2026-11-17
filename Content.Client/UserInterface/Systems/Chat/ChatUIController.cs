@@ -1130,7 +1130,7 @@ public sealed partial class ChatUIController : UIController
         {
             var severity = bodyStatus.TryGetValue(bodyPart, out var currentSeverity)
                 ? currentSeverity
-                : WoundableSeverity.Perfect;
+                : default;
             var enumName = Enum.GetName(typeof(TargetBodyPart), bodyPart) ?? "Unknown";
             var baseRsiPath = new ResPath($"/Textures/_Shitmed/Interface/Targeting/Status/{enumName.ToLowerInvariant()}.rsi");
             var rsi = new SpriteSpecifier.Rsi(baseRsiPath, $"{enumName.ToLowerInvariant()}_{(int) severity}");
