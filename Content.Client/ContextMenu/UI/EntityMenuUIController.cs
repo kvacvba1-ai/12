@@ -172,13 +172,17 @@ namespace Content.Client.ContextMenu.UI
             if (_stateManager.CurrentState is not GameplayStateBase)
                 return false;
 
-            // In-world right-click on a mob opens the RP combat panel and binds it to that target.
+            // The RP panel only intercepts right-click while its separate mode is enabled.
             if (args.EntityUid.IsValid()
                 && _entityManager.EntityExists(args.EntityUid)
                 && _entityManager.HasComponent<MobStateComponent>(args.EntityUid))
             {
-                _userInterfaceManager.GetUIController<ChatUIController>().OpenCombatPanel(args.EntityUid);
-                return true;
+                var chatController = _userInterfaceManager.GetUIController<ChatUIController>();
+                if (chatController.CombatPanelModeEnabled)
+                {
+                    chatController.OpenCombatPanel(args.EntityUid);
+                    return true;
+                }
             }
 
             if (_combatMode.IsInCombatMode(args.Session?.AttachedEntity))
