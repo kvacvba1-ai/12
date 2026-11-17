@@ -39,8 +39,6 @@ public partial class ChatBox : UIWidget
 
     public bool Main { get; set; }
 
-    public event Action? CombatPanelPressed;
-
     public string SearchFilter { get; private set; } = string.Empty; // ADT-Tweak
 
     public ChatSelectChannel SelectedChannel => ChatInput.ChannelSelector.SelectedChannel;
@@ -57,7 +55,6 @@ public partial class ChatBox : UIWidget
         _loc = IoCManager.Resolve<ILocalizationManager>();
 
         ChatInput.Input.OnTextEntered += OnTextEntered;
-        CombatPanelButton.OnPressed += _ => CombatPanelPressed?.Invoke();
         ChatInput.Input.OnKeyBindDown += OnInputKeyBindDown;
         ChatInput.Input.OnTextChanged += OnTextChanged;
         ChatInput.Input.OnFocusEnter += OnFocusEnter;

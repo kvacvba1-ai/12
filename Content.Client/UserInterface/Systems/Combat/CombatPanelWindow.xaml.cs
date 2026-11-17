@@ -11,6 +11,8 @@ public sealed partial class CombatPanelWindow : FancyWindow
 {
     private string? _selectedAction;
     private string? _selectedPart;
+    private EntityUid? _target;
+    public EntityUid? Target => _target;
 
     public event Action<string>? EmoteRequested;
 
@@ -25,18 +27,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         HeadButton.OnPressed += _ => SelectPart("head");
         ChestButton.OnPressed += _ => SelectPart("chest");
-        StomachButton.OnPressed += _ => SelectPart("stomach");
-        GroinButton.OnPressed += _ => SelectPart("groin");
-        LeftShoulderButton.OnPressed += _ => SelectPart("left shoulder");
-        RightShoulderButton.OnPressed += _ => SelectPart("right shoulder");
         LeftArmButton.OnPressed += _ => SelectPart("left arm");
         RightArmButton.OnPressed += _ => SelectPart("right arm");
-        LeftHandButton.OnPressed += _ => SelectPart("left hand");
-        RightHandButton.OnPressed += _ => SelectPart("right hand");
         LeftLegButton.OnPressed += _ => SelectPart("left leg");
         RightLegButton.OnPressed += _ => SelectPart("right leg");
-        LeftFootButton.OnPressed += _ => SelectPart("left foot");
-        RightFootButton.OnPressed += _ => SelectPart("right foot");
 
         PerformButton.OnPressed += _ => Perform();
     }
@@ -45,6 +39,13 @@ public sealed partial class CombatPanelWindow : FancyWindow
     /// Shows only actions supported by the item in the active hand.
     /// Empty hands expose unarmed actions; guns expose shooting; melee weapons expose stabbing.
     /// </summary>
+    public void SetTarget(EntityUid target)
+    {
+        _target = target;
+        _selectedPart = null;
+        UpdateSelection();
+    }
+
     public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)
     {
         ShootButton.Visible = hasGun;

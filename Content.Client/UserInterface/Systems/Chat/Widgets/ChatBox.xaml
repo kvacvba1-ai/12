@@ -27,7 +27,6 @@ SPDX-License-Identifier: MIT
             <goobcontrols:CustomOutputPanel Name="Contents" HorizontalExpand="True" VerticalExpand="True" Margin="8 8 8 4" />
             <BoxContainer Orientation="Horizontal" SeparationOverride="4" HorizontalExpand="True">
                 <controls:ChatInputBox HorizontalExpand="True" Name="ChatInput" Access="Public" Margin="2"/>
-                <Button Name="CombatPanelButton" Text="Combat" MinSize="72 0" />
             </BoxContainer>
         </BoxContainer>
     </PanelContainer>
