@@ -19,10 +19,9 @@ public sealed partial class CombatPanelWindow : FancyWindow
         RobustXamlLoader.Load(this);
 
         ShootButton.OnPressed += _ => SelectAction("shoots");
-        StrikeButton.OnPressed += _ => SelectAction("strikes");
-        PunchButton.OnPressed += _ => SelectAction("punches");
         StabButton.OnPressed += _ => SelectAction("stabs");
-        GrabButton.OnPressed += _ => SelectAction("grabs");
+        PunchButton.OnPressed += _ => SelectAction("punches");
+        KickButton.OnPressed += _ => SelectAction("kicks");
 
         HeadButton.OnPressed += _ => SelectPart("head");
         ChestButton.OnPressed += _ => SelectPart("chest");
@@ -42,6 +41,21 @@ public sealed partial class CombatPanelWindow : FancyWindow
         PerformButton.OnPressed += _ => Perform();
     }
 
+    /// <summary>
+    /// Shows only actions supported by the item in the active hand.
+    /// Empty hands expose unarmed actions; guns expose shooting; melee weapons expose stabbing.
+    /// </summary>
+    public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)
+    {
+        ShootButton.Visible = hasGun;
+        StabButton.Visible = !hasGun && hasMeleeWeapon;
+        PunchButton.Visible = !hasGun && !hasMeleeWeapon;
+        KickButton.Visible = !hasGun && !hasMeleeWeapon;
+
+        _selectedAction = null;
+        UpdateSelection();
+    }
+
     private void SelectAction(string action)
     {
         _selectedAction = action;
@@ -59,7 +73,19 @@ public sealed partial class CombatPanelWindow : FancyWindow
         PerformButton.Disabled = _selectedAction == null || _selectedPart == null;
         SelectionLabel.Text = _selectedAction == null || _selectedPart == null
             ? "Выбери действие и часть тела"
-            : $"{_selectedAction} → {_selectedPart}";
+            : $"{GetActionLabel(_selectedAction)} → {_selectedPart}";
+    }
+
+    private static string GetActionLabel(string action)
+    {
+        return action switch
+        {
+            "shoots" => "Выстрелить",
+            "stabs" => "Ударить ножом",
+            "punches" => "Ударить кулаком",
+            "kicks" => "Пнуть",
+            _ => action,
+        };
     }
 
     private void Perform()
@@ -67,10 +93,16 @@ public sealed partial class CombatPanelWindow : FancyWindow
         if (_selectedAction == null || _selectedPart == null)
             return;
 
-        var message = _selectedAction == "grabs"
-            ? $"grabs the enemy by the {_selectedPart}"
-            : $"{_selectedAction} the enemy in the {_selectedPart}";
+        var message = _selectedAction switch
+        {
+            "shoots" => $"shoots the enemy in the {_selectedPart}",
+            "stabs" => $"stabs the enemy in the {_selectedPart}",
+            "punches" => $"punches the enemy in the {_selectedPart}",
+            "kicks" => $"kicks the enemy in the {_selectedPart}",
+            _ => null,
+        };
 
-        EmoteRequested?.Invoke(message);
+        if (message != null)
+            EmoteRequested?.Invoke(message);
     }
 }

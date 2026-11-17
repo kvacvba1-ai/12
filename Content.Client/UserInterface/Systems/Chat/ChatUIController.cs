@@ -22,6 +22,10 @@ using Content.Shared._Starlight.CollectiveMind; // Goobstation - Starlight colle
 using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
+using Content.Shared.Hands.Components;
+using Content.Shared.Hands.EntitySystems;
+using Content.Shared.Weapons.Melee;
+using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Damage.ForceSay;
 using Content.Shared.Decals;
 using Content.Shared.Input;
@@ -72,6 +76,7 @@ public sealed partial class ChatUIController : UIController
     [UISystemDependency] private readonly TransformSystem? _transform = default;
     [UISystemDependency] private readonly MindSystem? _mindSystem = default!;
     [UISystemDependency] private readonly RoleCodewordSystem? _roleCodewordSystem = default!;
+    [UISystemDependency] private readonly SharedHandsSystem? _hands = default;
 
     private static readonly ProtoId<ColorPalettePrototype> ChatNamePalette = "ChatNames";
     private string[] _chatNameColors = default!;
@@ -1018,9 +1023,25 @@ public sealed partial class ChatUIController : UIController
         }
 
         if (_combatPanelWindow.IsOpen)
+        {
             _combatPanelWindow.Close();
-        else
-            _combatPanelWindow.Open();
+            return;
+        }
+
+        // Build the action list from the item in the currently selected hand.
+        EntityUid? heldItem = null;
+        if (_player.LocalEntity is { } player
+            && _ent.TryGetComponent<HandsComponent>(player, out var hands))
+        {
+            heldItem = _hands?.GetActiveItem((player, hands));
+        }
+
+        var hasGun = heldItem is { } gun && _ent.HasComponent<GunComponent>(gun);
+        var hasMeleeWeapon = !hasGun
+            && heldItem is { } melee && _ent.HasComponent<MeleeWeaponComponent>(melee);
+
+        _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
+        _combatPanelWindow.Open();
     }
 
     public ChatSelectChannel GetPreferredChannel()
