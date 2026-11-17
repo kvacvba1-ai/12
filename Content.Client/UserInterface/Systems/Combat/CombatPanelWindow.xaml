@@ -16,19 +16,26 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <Button Name="PunchButton" Text="Ударить кулаком" />
             <Button Name="KickButton" Text="Пнуть" />
         </BoxContainer>
-        <Label Text="ЧАСТЬ ТЕЛА" />
-        <GridContainer Columns="2" HorizontalExpand="True">
-            <Button Name="HeadButton" Text="Голова" />
-            <Button Name="ChestButton" Text="Грудь" />
-            <Button Name="LeftArmButton" Text="Левая рука" />
-            <Button Name="RightArmButton" Text="Правая рука" />
-            <Button Name="LeftLegButton" Text="Левая нога" />
-            <Button Name="RightLegButton" Text="Правая нога" />
-        </GridContainer>
+        <BoxContainer Name="BodyPartSelectionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False">
+            <Label Text="ЧАСТЬ ТЕЛА" />
+            <GridContainer Columns="2" HorizontalExpand="True">
+                <Button Name="HeadButton" Text="Голова" />
+                <Button Name="ChestButton" Text="Грудь" />
+                <Button Name="LeftArmButton" Text="Левая рука" />
+                <Button Name="RightArmButton" Text="Правая рука" />
+                <Button Name="LeftLegButton" Text="Левая нога" />
+                <Button Name="RightLegButton" Text="Правая нога" />
+            </GridContainer>
+        </BoxContainer>
         <Label Name="SelectionLabel" Text="Выбери действие и часть тела" />
         <Button Name="PerformButton" Text="Выполнить" Disabled="True" />
         <PanelContainer StyleClasses="LowDivider" />
-        <Label Text="ЭКСПРЕСС-АНАЛИЗ ЗДОРОВЬЯ" />
-        <Label Name="HealthAnalyzerLabel" Text="Нет данных" />
+        <PanelContainer StyleClasses="LowDivider" />
+        <Label Text="АНАЛИЗАТОР ЗДОРОВЬЯ" />
+        <BoxContainer Orientation="Horizontal" SeparationOverride="8" HorizontalExpand="True">
+            <SpriteView Name="HealthDollView" SetSize="72 112" Visible="False" />
+            <Label Name="HealthAnalyzerLabel" Text="Нет данных" HorizontalExpand="True" />
+        </BoxContainer>
+        <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
     </BoxContainer>
 </controls:FancyWindow>
