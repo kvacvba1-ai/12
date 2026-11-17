@@ -66,6 +66,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         _selectedAction = null;
         _selectedPart = null;
+        BodyPartSelectionContainer.Visible = false;
         UpdatePartButtonHighlights();
         UpdateActionButtonHighlights();
         UpdateSelection();
@@ -178,7 +179,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     private void Perform()
     {
-        if (_selectedAction == null || _selectedAction is "punches" or "kicks" && _selectedPart == null)
+        if (_selectedAction == null || (_selectedAction is "punches" or "kicks") && _selectedPart == null)
             return;
 
         var message = _selectedAction switch
