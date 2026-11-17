@@ -162,6 +162,7 @@ public sealed partial class ChatUIController : UIController
     private CombatPanelWindow? _combatPanelWindow;
     private bool _combatPanelModeEnabled;
     private TimeSpan _combatPanelRefreshTimer;
+    private TimeSpan _medicalRefreshTimer;
     private EntityUid? _healthDollEntity;
     private Dictionary<TargetBodyPart, WoundableSeverity>? _lastBodyStatus;
     private static readonly EntProtoId HealthDollPrototype = "AlertSpriteView";
@@ -661,12 +662,18 @@ public sealed partial class ChatUIController : UIController
             return;
 
         _combatPanelRefreshTimer += TimeSpan.FromSeconds(delta.DeltaSeconds);
-        if (_combatPanelRefreshTimer < TimeSpan.FromSeconds(0.5))
-            return;
+        _medicalRefreshTimer += TimeSpan.FromSeconds(delta.DeltaSeconds);
+        if (_combatPanelRefreshTimer >= TimeSpan.FromSeconds(0.5))
+        {
+            _combatPanelRefreshTimer = TimeSpan.Zero;
+            UpdateCombatPanelHealth(target);
+        }
 
-        _combatPanelRefreshTimer = TimeSpan.Zero;
-        UpdateCombatPanelHealth(target);
-        UpdateCombatPanelMedicalItems(target);
+        if (_medicalRefreshTimer >= TimeSpan.FromSeconds(2))
+        {
+            _medicalRefreshTimer = TimeSpan.Zero;
+            UpdateCombatPanelMedicalItems(target);
+        }
     }
 
     private void UpdateQueuedSpeechBubbles(FrameEventArgs delta)
@@ -1067,6 +1074,7 @@ public sealed partial class ChatUIController : UIController
 
         _lastBodyStatus = null;
         _combatPanelRefreshTimer = TimeSpan.Zero;
+        _medicalRefreshTimer = TimeSpan.Zero;
         UpdateCombatPanelHealth(target);
         UpdateCombatPanelMedicalItems(target);
         _combatPanelWindow.Open();
@@ -1093,6 +1101,10 @@ public sealed partial class ChatUIController : UIController
 
         if (!_ent.TryGetComponent<TargetingComponent>(target, out var targeting))
         {
+            if (_healthDollEntity is { } oldDoll && _ent.EntityExists(oldDoll))
+                _ent.QueueDeleteEntity(oldDoll);
+            _healthDollEntity = null;
+            _lastBodyStatus = null;
             _combatPanelWindow.SetHealthDoll(null);
             return;
         }
