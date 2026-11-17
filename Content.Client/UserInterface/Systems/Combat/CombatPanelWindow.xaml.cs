@@ -46,6 +46,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _targetName = targetName;
         TargetNameLabel.Text = $"Цель: {targetName}";
         _selectedPart = null;
+        UpdatePartButtonHighlights();
         UpdateSelection();
     }
 
