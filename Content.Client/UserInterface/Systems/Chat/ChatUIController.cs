@@ -24,7 +24,13 @@ using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
 using Content.Shared.Damage;
+using Content.Shared.Damage.Prototypes;
 using Content.Shared.IdentityManagement;
+using Content.Shared.Inventory;
+using Content.Shared.Storage;
+using Content.Shared.Interaction;
+using Content.Shared._Shitmed.Targeting;
+using Content.Shared._Shitmed.Medical.Surgery.Wounds;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Weapons.Melee;
@@ -43,6 +49,7 @@ using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controllers;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Configuration;
+using Robust.Shared.GameObjects;
 using Robust.Shared.GameObjects.Components.Localization;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
@@ -51,6 +58,7 @@ using Robust.Shared.Prototypes;
 using Robust.Shared.Replays;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
+using Robust.Shared.Graphics.RSI;
 
 
 namespace Content.Client.UserInterface.Systems.Chat;
@@ -155,6 +163,11 @@ public sealed partial class ChatUIController : UIController
     private readonly HashSet<ChatBox> _chats = new();
     private CombatPanelWindow? _combatPanelWindow;
     private bool _combatPanelModeEnabled;
+    private TimeSpan _combatPanelRefreshTimer;
+    private TimeSpan _medicalRefreshTimer;
+    private EntityUid? _healthDollEntity;
+    private Dictionary<TargetBodyPart, WoundableSeverity>? _lastBodyStatus;
+    private static readonly EntProtoId HealthDollPrototype = "AlertSpriteView";
 
     public bool CombatPanelModeEnabled => _combatPanelModeEnabled;
 
@@ -646,6 +659,23 @@ public sealed partial class ChatUIController : UIController
     public override void FrameUpdate(FrameEventArgs delta)
     {
         UpdateQueuedSpeechBubbles(delta);
+
+        if (_combatPanelWindow is not { IsOpen: true, Target: { } target } || !_ent.EntityExists(target))
+            return;
+
+        _combatPanelRefreshTimer += TimeSpan.FromSeconds(delta.DeltaSeconds);
+        _medicalRefreshTimer += TimeSpan.FromSeconds(delta.DeltaSeconds);
+        if (_combatPanelRefreshTimer >= TimeSpan.FromSeconds(0.5))
+        {
+            _combatPanelRefreshTimer = TimeSpan.Zero;
+            UpdateCombatPanelHealth(target);
+        }
+
+        if (_medicalRefreshTimer >= TimeSpan.FromSeconds(2))
+        {
+            _medicalRefreshTimer = TimeSpan.Zero;
+            UpdateCombatPanelMedicalItems(target);
+        }
     }
 
     private void UpdateQueuedSpeechBubbles(FrameEventArgs delta)
@@ -1044,6 +1074,19 @@ public sealed partial class ChatUIController : UIController
         _combatPanelWindow.SetTarget(target, targetName);
         _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
 
+        _lastBodyStatus = null;
+        _combatPanelRefreshTimer = TimeSpan.Zero;
+        _medicalRefreshTimer = TimeSpan.Zero;
+        UpdateCombatPanelHealth(target);
+        UpdateCombatPanelMedicalItems(target);
+        _combatPanelWindow.Open();
+    }
+
+    private void UpdateCombatPanelHealth(EntityUid target)
+    {
+        if (_combatPanelWindow == null || !_ent.EntityExists(target))
+            return;
+
         var status = _ent.TryGetComponent<MobStateComponent>(target, out var mobState)
             ? mobState.CurrentState switch
             {
@@ -1053,11 +1096,136 @@ public sealed partial class ChatUIController : UIController
                 _ => "Неизвестно",
             }
             : "Неизвестно";
-        var damage = _ent.TryGetComponent<DamageableComponent>(target, out var damageable)
-            ? damageable.TotalDamage.ToString()
-            : "Нет данных";
-        _combatPanelWindow.SetHealthAnalyzer(status, damage);
-        _combatPanelWindow.Open();
+        var healthLines = new List<string> { $"Состояние: {status}" };
+        if (_ent.TryGetComponent<DamageableComponent>(target, out var damageable))
+        {
+            healthLines.Add($"Общие повреждения: {damageable.TotalDamage}");
+
+            foreach (var (groupId, amount) in damageable.DamagePerGroup.OrderByDescending(entry => entry.Value))
+            {
+                if (amount <= 0 || !_prototypeManager.TryIndex<DamageGroupPrototype>(groupId, out var group))
+                    continue;
+
+                healthLines.Add($"{group.LocalizedName}: {amount}");
+            }
+        }
+        else
+        {
+            healthLines.Add("Нет данных об уроне");
+        }
+
+        _combatPanelWindow.SetHealthAnalyzer(string.Join("\\n", healthLines), "");
+
+        if (!_ent.TryGetComponent<TargetingComponent>(target, out var targeting))
+        {
+            if (_healthDollEntity is { } oldDoll && _ent.EntityExists(oldDoll))
+                _ent.QueueDeleteEntity(oldDoll);
+            _healthDollEntity = null;
+            _lastBodyStatus = null;
+            _combatPanelWindow.SetHealthDoll(null);
+            return;
+        }
+
+        var bodyStatus = targeting.BodyStatus;
+        if (_lastBodyStatus != null && _lastBodyStatus.SequenceEqual(bodyStatus))
+            return;
+
+        _lastBodyStatus = new Dictionary<TargetBodyPart, WoundableSeverity>(bodyStatus);
+        if (_healthDollEntity is { } oldDoll && _ent.EntityExists(oldDoll))
+            _ent.QueueDeleteEntity(oldDoll);
+
+        _healthDollEntity = _ent.Spawn(HealthDollPrototype);
+        if (!_ent.TryGetComponent<SpriteComponent>(_healthDollEntity.Value, out var sprite))
+            return;
+
+        var spriteSystem = _ent.System<SpriteSystem>();
+        var layer = 0;
+        foreach (var (bodyPart, severity) in bodyStatus)
+        {
+            var enumName = Enum.GetName(typeof(TargetBodyPart), bodyPart) ?? "Unknown";
+            var baseRsiPath = new ResPath($"/Textures/_Shitmed/Interface/Targeting/Status/{enumName.ToLowerInvariant()}.rsi");
+            var rsi = new SpriteSpecifier.Rsi(baseRsiPath, $"{enumName.ToLowerInvariant()}_{(int) severity}");
+            sprite.AddLayer(spriteSystem.Frame0(rsi));
+            sprite.LayerSetScale(layer, new Vector2(3f, 3f));
+            layer++;
+        }
+
+        _combatPanelWindow.SetHealthDoll(_healthDollEntity);
+    }
+
+    private void UpdateCombatPanelMedicalItems(EntityUid target)
+    {
+        if (_combatPanelWindow == null
+            || _player.LocalEntity is not { } user
+            || !_ent.TryGetComponent<InventoryComponent>(user, out var inventory))
+        {
+            _combatPanelWindow?.SetMedicalItems(Array.Empty<(string Name, Action Use)>());
+            return;
+        }
+
+        var items = new List<(string Name, Action Use)>();
+        var pendingStorage = new Queue<EntityUid>();
+        var visited = new HashSet<EntityUid>();
+        var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
+        while (slots.NextItem(out var item))
+            AddMedicalItem(item);
+
+        while (pendingStorage.TryDequeue(out var storageEntity))
+        {
+            if (!_ent.TryGetComponent<StorageComponent>(storageEntity, out var storage))
+                continue;
+
+            foreach (var storedItem in storage.Container.ContainedEntities)
+                AddMedicalItem(storedItem);
+        }
+
+        _combatPanelWindow.SetMedicalItems(items);
+
+        void AddMedicalItem(EntityUid item)
+        {
+            if (!visited.Add(item) || !_ent.EntityExists(item))
+                return;
+
+            var itemName = Identity.Name(item, _ent);
+            if (IsMedicalSupply(itemName.ToLowerInvariant()))
+            {
+                var capturedItem = item;
+                items.Add((itemName, () =>
+                {
+                    if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem))
+                        return;
+
+                    // Medical supplies are used on the player who opened the RP panel,
+                    // not on the selected enemy target.
+                    var coordinates = _ent.GetComponent<TransformComponent>(user).Coordinates;
+                    _ent.System<SharedInteractionSystem>().InteractUsing(
+                        user,
+                        capturedItem,
+                        user,
+                        coordinates,
+                        checkCanUse: false);
+                }));
+            }
+
+            if (_ent.HasComponent<StorageComponent>(item))
+                pendingStorage.Enqueue(item);
+        }
+    }
+
+    private static bool IsMedicalSupply(string itemName)
+    {
+        return itemName.Contains("бинт")
+            || itemName.Contains("шприц")
+            || itemName.Contains("медипен")
+            || itemName.Contains("мазь")
+            || itemName.Contains("ожог")
+            || itemName.Contains("ушиб")
+            || itemName.Contains("brutepack")
+            || itemName.Contains("gauze")
+            || itemName.Contains("ointment")
+            || itemName.Contains("medipen")
+            || itemName.Contains("syringe")
+            || itemName.Contains("bruise");
     }
 
     public ChatSelectChannel GetPreferredChannel()
