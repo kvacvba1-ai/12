@@ -9,13 +9,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     MinSize="300 520">
     <BoxContainer Orientation="Vertical" SeparationOverride="6" HorizontalExpand="True">
         <Label Text="ДЕЙСТВИЕ" />
-        <GridContainer Columns="2" HorizontalExpand="True">
-            <Button Name="ShootButton" Text="Стрелять" />
-            <Button Name="StrikeButton" Text="Ударить" />
-            <Button Name="PunchButton" Text="Пнуть" />
+        <BoxContainer Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True">
+            <Button Name="ShootButton" Text="Выстрелить" />
             <Button Name="StabButton" Text="Ударить ножом" />
-            <Button Name="GrabButton" Text="Схватить" />
-        </GridContainer>
+            <Button Name="PunchButton" Text="Ударить кулаком" />
+            <Button Name="KickButton" Text="Пнуть" />
+        </BoxContainer>
         <Label Text="ЧАСТЬ ТЕЛА" />
         <GridContainer Columns="2" HorizontalExpand="True">
             <Button Name="HeadButton" Text="Голова" />
