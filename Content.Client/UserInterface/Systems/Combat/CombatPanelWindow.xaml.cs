@@ -76,7 +76,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     {
         _selectedAction = action;
         _selectedPart = null;
-        BodyPartSelectionContainer.Visible = action is "punches" or "kicks";
+        BodyPartSelectionContainer.Visible = true;
         UpdatePartButtonHighlights();
         UpdateActionButtonHighlights();
         UpdateSelection();
@@ -154,7 +154,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     private void UpdateSelection()
     {
-        var needsPart = _selectedAction is "punches" or "kicks";
+        var needsPart = _selectedAction != null;
         PerformButton.Disabled = _selectedAction == null || needsPart && _selectedPart == null;
         SelectionLabel.Text = _selectedAction == null
             ? "Выбери действие"
@@ -179,13 +179,13 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     private void Perform()
     {
-        if (_selectedAction == null || (_selectedAction is "punches" or "kicks") && _selectedPart == null)
+        if (_selectedAction == null || _selectedPart == null)
             return;
 
         var message = _selectedAction switch
         {
-            "shoots" => $"shoots at {_targetName}",
-            "stabs" => $"stabs {_targetName}",
+            "shoots" => $"shoots {_targetName} in the {_selectedPart}",
+            "stabs" => $"stabs {_targetName} in the {_selectedPart}",
             "punches" => $"punches {_targetName} in the {_selectedPart}",
             "kicks" => $"kicks {_targetName} in the {_selectedPart}",
             _ => null,
