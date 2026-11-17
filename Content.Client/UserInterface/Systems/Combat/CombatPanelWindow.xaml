@@ -19,18 +19,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         <GridContainer Columns="2" HorizontalExpand="True">
             <Button Name="HeadButton" Text="Голова" />
             <Button Name="ChestButton" Text="Грудь" />
-            <Button Name="StomachButton" Text="Живот" />
-            <Button Name="GroinButton" Text="Пах" />
-            <Button Name="LeftShoulderButton" Text="Левое плечо" />
-            <Button Name="RightShoulderButton" Text="Правое плечо" />
             <Button Name="LeftArmButton" Text="Левая рука" />
             <Button Name="RightArmButton" Text="Правая рука" />
-            <Button Name="LeftHandButton" Text="Левая кисть" />
-            <Button Name="RightHandButton" Text="Правая кисть" />
             <Button Name="LeftLegButton" Text="Левая нога" />
             <Button Name="RightLegButton" Text="Правая нога" />
-            <Button Name="LeftFootButton" Text="Левая стопа" />
-            <Button Name="RightFootButton" Text="Правая стопа" />
         </GridContainer>
         <Label Name="SelectionLabel" Text="Выбери действие и часть тела" />
         <Button Name="PerformButton" Text="Выполнить" Disabled="True" />

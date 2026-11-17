@@ -10,6 +10,7 @@ using Content.Client.Chat.TypingIndicator;
 using Content.Client.Chat.UI;
 using Content.Client.Examine;
 using Content.Client.Gameplay;
+using Content.Client.Hands.Systems;
 using Content.Client.Ghost;
 using Content.Client.Mind;
 using Content.Client.Roles;
@@ -22,8 +23,6 @@ using Content.Shared._Starlight.CollectiveMind; // Goobstation - Starlight colle
 using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
-using Content.Shared.Hands.Components;
-using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Damage.ForceSay;
@@ -76,7 +75,6 @@ public sealed partial class ChatUIController : UIController
     [UISystemDependency] private readonly TransformSystem? _transform = default;
     [UISystemDependency] private readonly MindSystem? _mindSystem = default!;
     [UISystemDependency] private readonly RoleCodewordSystem? _roleCodewordSystem = default!;
-    [UISystemDependency] private readonly SharedHandsSystem? _hands = default;
 
     private static readonly ProtoId<ColorPalettePrototype> ChatNamePalette = "ChatNames";
     private string[] _chatNameColors = default!;
@@ -1004,16 +1002,14 @@ public sealed partial class ChatUIController : UIController
     public void RegisterChat(ChatBox chat)
     {
         _chats.Add(chat);
-        chat.CombatPanelPressed += ToggleCombatPanel;
     }
 
     public void UnregisterChat(ChatBox chat)
     {
         _chats.Remove(chat);
-        chat.CombatPanelPressed -= ToggleCombatPanel;
     }
 
-    private void ToggleCombatPanel()
+    public void OpenCombatPanel(EntityUid target)
     {
         if (_combatPanelWindow == null)
         {
@@ -1023,23 +1019,15 @@ public sealed partial class ChatUIController : UIController
         }
 
         if (_combatPanelWindow.IsOpen)
-        {
             _combatPanelWindow.Close();
-            return;
-        }
 
-        // Build the action list from the item in the currently selected hand.
-        EntityUid? heldItem = null;
-        if (_player.LocalEntity is { } player
-            && _ent.TryGetComponent<HandsComponent>(player, out var hands))
-        {
-            heldItem = _hands?.GetActiveItem((player, hands));
-        }
-
+        // Use the client HandsSystem: it exposes the active hand item for the local player.
+        var heldItem = _ent.System<HandsSystem>().GetActiveHandEntity();
         var hasGun = heldItem is { } gun && _ent.HasComponent<GunComponent>(gun);
         var hasMeleeWeapon = !hasGun
             && heldItem is { } melee && _ent.HasComponent<MeleeWeaponComponent>(melee);
 
+        _combatPanelWindow.SetTarget(target);
         _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
         _combatPanelWindow.Open();
     }

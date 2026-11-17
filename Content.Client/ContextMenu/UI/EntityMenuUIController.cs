@@ -7,10 +7,12 @@ using Content.Client.Examine;
 using Content.Client.Gameplay;
 using Content.Client.Verbs;
 using Content.Client.Verbs.UI;
+using Content.Client.UserInterface.Systems.Chat;
 using Content.Shared.CCVar;
 using Content.Shared.Examine;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Input;
+using Content.Shared.Mobs.Components;
 using Content.Shared.Verbs;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
@@ -169,6 +171,15 @@ namespace Content.Client.ContextMenu.UI
 
             if (_stateManager.CurrentState is not GameplayStateBase)
                 return false;
+
+            // In-world right-click on a mob opens the RP combat panel and binds it to that target.
+            if (args.EntityUid.IsValid()
+                && _entityManager.EntityExists(args.EntityUid)
+                && _entityManager.HasComponent<MobStateComponent>(args.EntityUid))
+            {
+                _userInterfaceManager.GetUIController<ChatUIController>().OpenCombatPanel(args.EntityUid);
+                return true;
+            }
 
             if (_combatMode.IsInCombatMode(args.Session?.AttachedEntity))
                 return false;
