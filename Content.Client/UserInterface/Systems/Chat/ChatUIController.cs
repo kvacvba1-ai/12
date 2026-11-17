@@ -29,6 +29,7 @@ using Content.Shared.IdentityManagement;
 using Content.Shared.Inventory;
 using Content.Shared.Storage;
 using Content.Shared.Stacks;
+using Content.Shared.Hands.Components;
 using Content.Shared.Interaction;
 using Content.Shared._Shitmed.Targeting;
 using Content.Shared._Shitmed.Medical.Surgery.Wounds;
@@ -1310,6 +1311,17 @@ public sealed partial class ChatUIController : UIController
         var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
         while (slots.NextItem(out var item))
             AddAmmunitionItem(item);
+
+        // Include both hands in addition to worn slots and pockets.
+        if (_ent.TryGetComponent<HandsComponent>(user, out var handsComponent))
+        {
+            var handsSystem = _ent.System<HandsSystem>();
+            foreach (var handId in handsComponent.Hands.Keys)
+            {
+                if (handsSystem.GetHeldItem((user, handsComponent), handId) is { } held)
+                    AddAmmunitionItem(held);
+            }
+        }
 
         while (pendingStorage.TryDequeue(out var storageEntity))
         {
