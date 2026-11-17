@@ -28,6 +28,7 @@ using Content.Shared.Damage.Prototypes;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Inventory;
 using Content.Shared.Storage;
+using Content.Shared.Stacks;
 using Content.Shared.Interaction;
 using Content.Shared._Shitmed.Targeting;
 using Content.Shared._Shitmed.Medical.Surgery.Wounds;
@@ -168,6 +169,10 @@ public sealed partial class ChatUIController : UIController
     private EntityUid? _pendingMedicalUseUser;
     private EntityUid? _pendingMedicalUseItem;
     private float _pendingMedicalUseDelay;
+    private EntityUid? _pendingAmmoReloadUser;
+    private EntityUid? _pendingAmmoReloadItem;
+    private EntityUid? _pendingAmmoReloadGun;
+    private float _pendingAmmoReloadDelay;
     private EntityUid? _healthDollEntity;
     private Dictionary<TargetBodyPart, WoundableSeverity>? _lastBodyStatus;
     private static readonly EntProtoId HealthDollPrototype = "AlertSpriteView";
@@ -687,6 +692,31 @@ public sealed partial class ChatUIController : UIController
             }
         }
 
+        if (_pendingAmmoReloadItem is { } pendingAmmo && _pendingAmmoReloadUser is { } reloadUser
+            && _pendingAmmoReloadGun is { } reloadGun)
+        {
+            _pendingAmmoReloadDelay -= delta.DeltaSeconds;
+            if (_pendingAmmoReloadDelay <= 0f)
+            {
+                _pendingAmmoReloadItem = null;
+                _pendingAmmoReloadUser = null;
+                _pendingAmmoReloadGun = null;
+                if (_ent.EntityExists(reloadUser) && _ent.EntityExists(pendingAmmo)
+                    && _ent.EntityExists(reloadGun)
+                    && _ent.System<HandsSystem>().IsHolding(reloadUser, pendingAmmo))
+                {
+                    var coordinates = _ent.GetComponent<TransformComponent>(reloadUser).Coordinates;
+                    _ent.System<SharedInteractionSystem>().InteractUsing(
+                        reloadUser,
+                        pendingAmmo,
+                        reloadGun,
+                        coordinates,
+                        checkCanUse: false);
+                    _combatPanelWindow?.ConsumeTurn();
+                }
+            }
+        }
+
         if (_combatPanelWindow is not { IsOpen: true, Target: { } target } || !_ent.EntityExists(target))
             return;
 
@@ -703,6 +733,7 @@ public sealed partial class ChatUIController : UIController
         {
             _medicalRefreshTimer = TimeSpan.Zero;
             UpdateCombatPanelMedicalItems(target);
+            UpdateCombatPanelAmmunition();
         }
     }
 
@@ -1101,6 +1132,7 @@ public sealed partial class ChatUIController : UIController
         _medicalRefreshTimer = TimeSpan.Zero;
         UpdateCombatPanelHealth(target);
         UpdateCombatPanelMedicalItems(target);
+        UpdateCombatPanelAmmunition();
         _combatPanelWindow.Open();
     }
 
@@ -1114,6 +1146,23 @@ public sealed partial class ChatUIController : UIController
         var hasGun = heldItem is { } gun && _ent.HasComponent<GunComponent>(gun);
         var hasMeleeWeapon = !hasGun
             && heldItem is { } melee && _ent.HasComponent<MeleeWeaponComponent>(melee);
+
+        if (heldItem is { } held)
+        {
+            var heldName = Identity.Name(held, _ent);
+            if (_ent.TryGetComponent<BallisticAmmoProviderComponent>(held, out var ballistic))
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {ballistic.Count}/{ballistic.Capacity}");
+            else if (_ent.TryGetComponent<BasicEntityAmmoProviderComponent>(held, out var basic))
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {basic.Count ?? 0}/{basic.Capacity ?? 0}");
+            else if (hasGun)
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nОгнестрельное оружие");
+            else if (hasMeleeWeapon)
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nОружие ближнего боя");
+            else
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}");
+        }
+        else
+            _combatPanelWindow.SetWeaponInfo("В руках: пусто");
 
         _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
     }
@@ -1235,6 +1284,92 @@ public sealed partial class ChatUIController : UIController
                     _pendingMedicalUseUser = user;
                     _pendingMedicalUseItem = capturedItem;
                     _pendingMedicalUseDelay = 0.2f;
+                }));
+            }
+
+            if (_ent.HasComponent<StorageComponent>(item))
+                pendingStorage.Enqueue(item);
+        }
+    }
+
+    private void UpdateCombatPanelAmmunition()
+    {
+        if (_combatPanelWindow == null
+            || _player.LocalEntity is not { } user
+            || !_ent.TryGetComponent<InventoryComponent>(user, out var inventory))
+        {
+            _combatPanelWindow?.SetAmmunitionItems(Array.Empty<(string Name, string Details, Action Use)>());
+            return;
+        }
+
+        var heldGun = _ent.System<HandsSystem>().GetActiveHandEntity();
+        var canReload = heldGun is { } gun && _ent.HasComponent<GunComponent>(gun);
+        var items = new List<(string Name, string Details, Action Use)>();
+        var pendingStorage = new Queue<EntityUid>();
+        var visited = new HashSet<EntityUid>();
+        var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
+        while (slots.NextItem(out var item))
+            AddAmmunitionItem(item);
+
+        while (pendingStorage.TryDequeue(out var storageEntity))
+        {
+            if (!_ent.TryGetComponent<StorageComponent>(storageEntity, out var storage))
+                continue;
+
+            foreach (var storedItem in storage.Container.ContainedEntities)
+                AddAmmunitionItem(storedItem);
+        }
+
+        _combatPanelWindow.SetAmmunitionItems(items);
+
+        void AddAmmunitionItem(EntityUid item)
+        {
+            if (!visited.Add(item) || !_ent.EntityExists(item))
+                return;
+
+            var itemName = Identity.Name(item, _ent);
+            var normalizedName = itemName.ToLowerInvariant();
+            var isAmmo = _ent.HasComponent<CartridgeAmmoComponent>(item)
+                || _ent.HasComponent<BallisticAmmoProviderComponent>(item)
+                || _ent.HasComponent<BasicEntityAmmoProviderComponent>(item);
+            var isThrowable = normalizedName.Contains("гранат")
+                || normalizedName.Contains("молотов")
+                || normalizedName.Contains("molotov")
+                || normalizedName.Contains("grenade")
+                || normalizedName.Contains("зажигатель");
+
+            if (isAmmo || isThrowable)
+            {
+                var amount = _ent.TryGetComponent<StackComponent>(item, out var stack)
+                    ? stack.Count
+                    : _ent.TryGetComponent<BallisticAmmoProviderComponent>(item, out var boxAmmo)
+                        ? boxAmmo.Count
+                        : _ent.TryGetComponent<BasicEntityAmmoProviderComponent>(item, out var basicAmmo)
+                            ? basicAmmo.Count ?? 1
+                            : 1;
+                var capturedItem = item;
+                var capturedGun = heldGun;
+                var details = isAmmo
+                    ? $"{amount} шт. — {(canReload ? "Зарядить" : "нужно оружие в руке")}"
+                    : $"{amount} шт. — расходник";
+                items.Add((itemName, details, () =>
+                {
+                    if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem))
+                        return;
+
+                    var hands = _ent.System<HandsSystem>();
+                    if (!hands.IsHolding(user, capturedItem)
+                        && !hands.TryPickupAnyHand(user, capturedItem, checkActionBlocker: false, animate: false))
+                        return;
+
+                    if (isAmmo && canReload && capturedGun is { } targetGun
+                        && _ent.EntityExists(targetGun))
+                    {
+                        _pendingAmmoReloadUser = user;
+                        _pendingAmmoReloadItem = capturedItem;
+                        _pendingAmmoReloadGun = targetGun;
+                        _pendingAmmoReloadDelay = 0.2f;
+                    }
                 }));
             }
 
