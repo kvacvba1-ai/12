@@ -1184,8 +1184,14 @@ public sealed partial class ChatUIController : UIController
                     if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem))
                         return;
 
-                    // Medical supplies are used on the player who opened the RP panel,
-                    // not on the selected enemy target.
+                    // Items inside backpacks/equipment containers must be taken out before
+                    // starting their do-after, otherwise the medical action is interrupted.
+                    var hands = _ent.System<HandsSystem>();
+                    if (!hands.IsHolding(user, capturedItem)
+                        && !hands.TryPickupAnyHand(user, capturedItem, checkActionBlocker: false, animate: false))
+                        return;
+
+                    // Medical supplies are used on the player who opened the RP panel.
                     var coordinates = _ent.GetComponent<TransformComponent>(user).Coordinates;
                     _ent.System<SharedInteractionSystem>().InteractUsing(
                         user,
