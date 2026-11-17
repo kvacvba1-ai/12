@@ -52,9 +52,9 @@ public sealed partial class CombatPanelWindow : FancyWindow
         UpdateSelection();
     }
 
-    public void SetHealthAnalyzer(string summary, string damage)
+    public void SetHealthAnalyzer(string status, string damage)
     {
-        HealthAnalyzerLabel.Text = string.IsNullOrEmpty(damage) ? summary : $"{summary}\nОбщий урон: {damage}";
+        HealthAnalyzerLabel.Text = $"Состояние: {status}\nОбщие повреждения: {damage}";
     }
 
     public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)
