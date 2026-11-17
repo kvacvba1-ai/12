@@ -12,6 +12,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private string? _selectedAction;
     private string? _selectedPart;
     private EntityUid? _target;
+    public EntityUid? Target => _target;
 
     public event Action<string>? EmoteRequested;
 
