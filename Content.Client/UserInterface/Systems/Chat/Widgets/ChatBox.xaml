@@ -25,7 +25,10 @@ SPDX-License-Identifier: MIT
             <!-- ADT-Tweak end -->
             <!-- Goobstation Change - Output Panel -->
             <goobcontrols:CustomOutputPanel Name="Contents" HorizontalExpand="True" VerticalExpand="True" Margin="8 8 8 4" />
-            <controls:ChatInputBox HorizontalExpand="True" Name="ChatInput" Access="Public" Margin="2"/>
+            <BoxContainer Orientation="Horizontal" SeparationOverride="4" HorizontalExpand="True">
+                <controls:ChatInputBox HorizontalExpand="True" Name="ChatInput" Access="Public" Margin="2"/>
+                <Button Name="CombatPanelButton" Text="Combat" MinSize="72 0" />
+            </BoxContainer>
         </BoxContainer>
     </PanelContainer>
 </widgets:ChatBox>
