@@ -669,6 +669,7 @@ public sealed partial class ChatUIController : UIController
         {
             _combatPanelRefreshTimer = TimeSpan.Zero;
             UpdateCombatPanelHealth(target);
+            UpdateCombatPanelActions();
         }
 
         if (_medicalRefreshTimer >= TimeSpan.FromSeconds(2))
@@ -1064,15 +1065,9 @@ public sealed partial class ChatUIController : UIController
         if (_combatPanelWindow.IsOpen)
             _combatPanelWindow.Close();
 
-        // Use the client HandsSystem: it exposes the active hand item for the local player.
-        var heldItem = _ent.System<HandsSystem>().GetActiveHandEntity();
-        var hasGun = heldItem is { } gun && _ent.HasComponent<GunComponent>(gun);
-        var hasMeleeWeapon = !hasGun
-            && heldItem is { } melee && _ent.HasComponent<MeleeWeaponComponent>(melee);
-
         var targetName = Identity.Name(target, _ent);
         _combatPanelWindow.SetTarget(target, targetName);
-        _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
+        UpdateCombatPanelActions();
 
         _lastBodyStatus = null;
         _combatPanelRefreshTimer = TimeSpan.Zero;
@@ -1080,6 +1075,20 @@ public sealed partial class ChatUIController : UIController
         UpdateCombatPanelHealth(target);
         UpdateCombatPanelMedicalItems(target);
         _combatPanelWindow.Open();
+    }
+
+    private void UpdateCombatPanelActions()
+    {
+        if (_combatPanelWindow == null || _player.LocalEntity == null)
+            return;
+
+        // Re-read the active hand while the panel is open so weapon changes are reflected.
+        var heldItem = _ent.System<HandsSystem>().GetActiveHandEntity();
+        var hasGun = heldItem is { } gun && _ent.HasComponent<GunComponent>(gun);
+        var hasMeleeWeapon = !hasGun
+            && heldItem is { } melee && _ent.HasComponent<MeleeWeaponComponent>(melee);
+
+        _combatPanelWindow.SetAvailableActions(hasGun, hasMeleeWeapon);
     }
 
     private void UpdateCombatPanelHealth(EntityUid target)
@@ -1126,7 +1135,9 @@ public sealed partial class ChatUIController : UIController
 
         var spriteSystem = _ent.System<SpriteSystem>();
         var layer = 0;
-        foreach (var bodyPart in Enum.GetValues<TargetBodyPart>())
+        // TargetBodyPart is a flags enum; Enum.GetValues also returns composite masks
+        // (Hands, Arms, All, etc.) that do not have individual RSI files.
+        foreach (var bodyPart in SharedTargetingSystem.GetValidParts())
         {
             var severity = bodyStatus.TryGetValue(bodyPart, out var currentSeverity)
                 ? currentSeverity
