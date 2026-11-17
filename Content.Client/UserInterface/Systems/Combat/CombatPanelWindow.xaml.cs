@@ -93,9 +93,9 @@ public sealed partial class CombatPanelWindow : FancyWindow
         foreach (var (button, part) in buttons)
         {
             if (part == _selectedPart)
-                button.StyleClasses.Add("ButtonColorGreen");
+                button.StyleClasses.Add("positive");
             else
-                button.StyleClasses.Remove("ButtonColorGreen");
+                button.StyleClasses.Remove("positive");
         }
     }
 
