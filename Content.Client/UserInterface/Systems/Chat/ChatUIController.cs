@@ -167,13 +167,6 @@ public sealed partial class ChatUIController : UIController
     private bool _combatPanelModeEnabled;
     private TimeSpan _combatPanelRefreshTimer;
     private TimeSpan _medicalRefreshTimer;
-    private EntityUid? _pendingMedicalUseUser;
-    private EntityUid? _pendingMedicalUseItem;
-    private float _pendingMedicalUseDelay;
-    private EntityUid? _pendingAmmoReloadUser;
-    private EntityUid? _pendingAmmoReloadItem;
-    private EntityUid? _pendingAmmoReloadGun;
-    private float _pendingAmmoReloadDelay;
     private EntityUid? _healthDollEntity;
     private Dictionary<TargetBodyPart, WoundableSeverity>? _lastBodyStatus;
     private static readonly EntProtoId HealthDollPrototype = "AlertSpriteView";
@@ -669,55 +662,6 @@ public sealed partial class ChatUIController : UIController
     {
         UpdateQueuedSpeechBubbles(delta);
 
-        // Let the pickup request settle before sending the interaction. Sending both in
-        // the same frame can make the server start the do-after while the item is still
-        // inside its storage container, which immediately interrupts the treatment.
-        if (_pendingMedicalUseItem is { } pendingItem && _pendingMedicalUseUser is { } pendingUser)
-        {
-            _pendingMedicalUseDelay -= delta.DeltaSeconds;
-            if (_pendingMedicalUseDelay <= 0f)
-            {
-                _pendingMedicalUseItem = null;
-                _pendingMedicalUseUser = null;
-                if (_ent.EntityExists(pendingUser) && _ent.EntityExists(pendingItem)
-                    && _ent.System<HandsSystem>().IsHolding(pendingUser, pendingItem))
-                {
-                    var coordinates = _ent.GetComponent<TransformComponent>(pendingUser).Coordinates;
-                    _ent.System<SharedInteractionSystem>().InteractUsing(
-                        pendingUser,
-                        pendingItem,
-                        pendingUser,
-                        coordinates,
-                        checkCanUse: false);
-                }
-            }
-        }
-
-        if (_pendingAmmoReloadItem is { } pendingAmmo && _pendingAmmoReloadUser is { } reloadUser
-            && _pendingAmmoReloadGun is { } reloadGun)
-        {
-            _pendingAmmoReloadDelay -= delta.DeltaSeconds;
-            if (_pendingAmmoReloadDelay <= 0f)
-            {
-                _pendingAmmoReloadItem = null;
-                _pendingAmmoReloadUser = null;
-                _pendingAmmoReloadGun = null;
-                if (_ent.EntityExists(reloadUser) && _ent.EntityExists(pendingAmmo)
-                    && _ent.EntityExists(reloadGun)
-                    && _ent.System<HandsSystem>().IsHolding(reloadUser, pendingAmmo))
-                {
-                    var coordinates = _ent.GetComponent<TransformComponent>(reloadUser).Coordinates;
-                    _ent.System<SharedInteractionSystem>().InteractUsing(
-                        reloadUser,
-                        pendingAmmo,
-                        reloadGun,
-                        coordinates,
-                        checkCanUse: false);
-                    _combatPanelWindow?.ConsumeTurn();
-                }
-            }
-        }
-
         if (_combatPanelWindow is not { IsOpen: true, Target: { } target } || !_ent.EntityExists(target))
             return;
 
@@ -979,6 +923,7 @@ public sealed partial class ChatUIController : UIController
     {
         var msg = message.Message;
         ProcessChatMessage(msg);
+        TryOpenIncomingCombatPanel(msg);
 
         if ((msg.Channel & ChatChannel.AdminRelated) == 0 ||
             _config.GetCVar(CCVars.ReplayRecordAdminChat))
@@ -1112,8 +1057,33 @@ public sealed partial class ChatUIController : UIController
         _chats.Remove(chat);
     }
 
-    public void OpenCombatPanel(EntityUid target)
+    private void TryOpenIncomingCombatPanel(ChatMessage message)
     {
+        if (message.HideChat
+            || message.Channel != ChatChannel.Emotes
+            || message.SenderEntity == default
+            || _player.LocalEntity is not { } localPlayer
+            || message.SenderEntity == _ent.GetNetEntity(localPlayer))
+            return;
+
+        var localName = Identity.Name(localPlayer, _ent);
+        var targetPrefix = $"пытается атаковать «{localName}»:";
+        if (!message.Message.StartsWith(targetPrefix, StringComparison.CurrentCultureIgnoreCase))
+            return;
+
+        var attacker = _ent.GetEntity(message.SenderEntity);
+        if (!_ent.EntityExists(attacker) || !_ent.HasComponent<MobStateComponent>(attacker))
+            return;
+
+        // The emote is delivered through normal local chat, so no custom server channel is needed.
+        OpenCombatPanel(attacker, incoming: true);
+    }
+
+    public void OpenCombatPanel(EntityUid target, bool incoming = false)
+    {
+        if (!_ent.EntityExists(target))
+            return;
+
         if (_combatPanelWindow == null)
         {
             _combatPanelWindow = UIManager.CreateWindow<CombatPanelWindow>();
@@ -1121,20 +1091,24 @@ public sealed partial class ChatUIController : UIController
                 _manager.SendMessage(message, ChatSelectChannel.Emotes);
         }
 
-        if (_combatPanelWindow.IsOpen)
-            _combatPanelWindow.Close();
-
         var targetName = Identity.Name(target, _ent);
-        _combatPanelWindow.SetTarget(target, targetName);
+        var sameEncounter = _combatPanelWindow.Target == target
+            && _combatPanelWindow.IsIncoming == incoming;
+
+        _combatPanelWindow.SetTarget(target, targetName, incoming);
         UpdateCombatPanelActions();
 
-        _lastBodyStatus = null;
+        if (!sameEncounter)
+            _lastBodyStatus = null;
+
         _combatPanelRefreshTimer = TimeSpan.Zero;
         _medicalRefreshTimer = TimeSpan.Zero;
         UpdateCombatPanelHealth(target);
         UpdateCombatPanelMedicalItems(target);
         UpdateCombatPanelAmmunition();
-        _combatPanelWindow.Open();
+
+        if (!_combatPanelWindow.IsOpen)
+            _combatPanelWindow.Open();
     }
 
     private void UpdateCombatPanelActions()
@@ -1268,24 +1242,10 @@ public sealed partial class ChatUIController : UIController
             var itemName = Identity.Name(item, _ent);
             if (IsMedicalSupply(itemName.ToLowerInvariant()))
             {
-                var capturedItem = item;
+                var capturedName = itemName;
                 items.Add((itemName, () =>
-                {
-                    if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem))
-                        return;
-
-                    // Medical supplies are used on the player who opened the RP panel.
-                    // If the item is in storage, request pickup first and defer interaction
-                    // until the hand state has had time to synchronize with the server.
-                    var hands = _ent.System<HandsSystem>();
-                    if (!hands.IsHolding(user, capturedItem)
-                        && !hands.TryPickupAnyHand(user, capturedItem, checkActionBlocker: false, animate: false))
-                        return;
-
-                    _pendingMedicalUseUser = user;
-                    _pendingMedicalUseItem = capturedItem;
-                    _pendingMedicalUseDelay = 0.2f;
-                }));
+                    _combatPanelWindow?.TryRequestEmote(
+                        $"пытается оказать себе медицинскую помощь с помощью «{capturedName}»")));
             }
 
             if (_ent.HasComponent<StorageComponent>(item))
@@ -1312,7 +1272,6 @@ public sealed partial class ChatUIController : UIController
         while (slots.NextItem(out var item))
             AddAmmunitionItem(item);
 
-        // Include both hands in addition to worn slots and pockets.
         if (_ent.TryGetComponent<HandsComponent>(user, out var handsComponent))
         {
             var handsSystem = _ent.System<HandsSystem>();
@@ -1359,28 +1318,23 @@ public sealed partial class ChatUIController : UIController
                         : _ent.TryGetComponent<BasicEntityAmmoProviderComponent>(item, out var basicAmmo)
                             ? basicAmmo.Count ?? 1
                             : 1;
-                var capturedItem = item;
                 var capturedGun = heldGun;
                 var details = isAmmo
-                    ? $"{amount} шт. — {(canReload ? "Зарядить" : "нужно оружие в руке")}"
+                    ? $"{amount} шт. — {(canReload ? "для перезарядки" : "нужно оружие в активной руке")}"
                     : $"{amount} шт. — расходник";
+
                 items.Add((itemName, details, () =>
                 {
-                    if (!_ent.EntityExists(user) || !_ent.EntityExists(capturedItem))
-                        return;
-
-                    var hands = _ent.System<HandsSystem>();
-                    if (!hands.IsHolding(user, capturedItem)
-                        && !hands.TryPickupAnyHand(user, capturedItem, checkActionBlocker: false, animate: false))
-                        return;
-
                     if (isAmmo && canReload && capturedGun is { } targetGun
                         && _ent.EntityExists(targetGun))
                     {
-                        _pendingAmmoReloadUser = user;
-                        _pendingAmmoReloadItem = capturedItem;
-                        _pendingAmmoReloadGun = targetGun;
-                        _pendingAmmoReloadDelay = 0.2f;
+                        var gunName = Identity.Name(targetGun, _ent);
+                        _combatPanelWindow?.TryRequestEmote(
+                            $"перезаряжает «{gunName}» с помощью «{itemName}»");
+                    }
+                    else if (isThrowable)
+                    {
+                        _combatPanelWindow?.TryRequestEmote($"готовит к применению «{itemName}»");
                     }
                 }));
             }
