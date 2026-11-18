@@ -5,43 +5,70 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <controls:FancyWindow
     xmlns="https://spacestation14.io"
     xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
-    Title="Combat"
-    MinSize="300 520">
+    Title="Боевая панель"
+    MinSize="360 430">
     <BoxContainer Orientation="Vertical" SeparationOverride="6" HorizontalExpand="True">
-        <Label Name="TargetNameLabel" Text="Цель: неизвестно" />
+        <Label Name="TargetNameLabel" Text="Цель: неизвестно" StyleClasses="LabelBig" />
+        <Label Name="EngagementInfoLabel" Text="Выберите цель" />
         <Label Name="WeaponInfoLabel" Text="В руках: нет оружия" />
-        <Label Text="ДЕЙСТВИЕ" />
-        <BoxContainer Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True">
-            <Button Name="ShootButton" Text="Выстрелить" />
-            <Button Name="StabButton" Text="Ударить ножом" />
-            <Button Name="PunchButton" Text="Ударить кулаком" />
-            <Button Name="KickButton" Text="Пнуть" />
-        </BoxContainer>
-        <BoxContainer Name="BodyPartSelectionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False">
-            <Label Text="ЧАСТЬ ТЕЛА" />
-            <GridContainer Columns="2" HorizontalExpand="True">
-                <Button Name="HeadButton" Text="Голова" />
-                <Button Name="ChestButton" Text="Грудь" />
-                <Button Name="LeftArmButton" Text="Левая рука" />
-                <Button Name="RightArmButton" Text="Правая рука" />
-                <Button Name="LeftLegButton" Text="Левая нога" />
-                <Button Name="RightLegButton" Text="Правая нога" />
-            </GridContainer>
-        </BoxContainer>
-        <Label Name="SelectionLabel" Text="Выбери действие и часть тела" />
-        <Button Name="PerformButton" Text="Выполнить" Disabled="True" />
-        <PanelContainer StyleClasses="LowDivider" />
-        <Label Text="АНАЛИЗАТОР ЗДОРОВЬЯ" />
-        <BoxContainer Orientation="Horizontal" SeparationOverride="8" HorizontalExpand="True">
-            <SpriteView Name="HealthDollView" SetSize="72 112" Visible="False" />
-            <Label Name="HealthAnalyzerLabel" Text="Нет данных" HorizontalExpand="True" />
-        </BoxContainer>
-        <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
-        <PanelContainer StyleClasses="LowDivider" />
-        <Button Name="AmmunitionToggleButton" Text="▣ АММУНИЦИЯ" />
-        <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
+
+        <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True">
+            <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
+                <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
+                    <BoxContainer Orientation="Vertical" SeparationOverride="6" Margin="6" HorizontalExpand="True">
+                        <Label Text="ДЕЙСТВИЕ" StyleClasses="LabelHeading" />
+                        <GridContainer Columns="2" HorizontalExpand="True">
+                            <Button Name="ShootButton" Text="Выстрелить" />
+                            <Button Name="StabButton" Text="Ударить ножом" />
+                            <Button Name="PunchButton" Text="Ударить кулаком" />
+                            <Button Name="KickButton" Text="Пнуть" />
+                        </GridContainer>
+
+                        <BoxContainer Name="BodyPartSelectionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False">
+                            <Label Text="ВЫБОР ЧАСТИ ТЕЛА" StyleClasses="LabelHeading" />
+                            <GridContainer Columns="2" HorizontalExpand="True">
+                                <Button Name="HeadButton" Text="Голова" />
+                                <Button Name="ChestButton" Text="Грудь" />
+                                <Button Name="LeftArmButton" Text="Левая рука" />
+                                <Button Name="RightArmButton" Text="Правая рука" />
+                                <Button Name="LeftLegButton" Text="Левая нога" />
+                                <Button Name="RightLegButton" Text="Правая нога" />
+                            </GridContainer>
+                        </BoxContainer>
+
+                        <Label Name="SelectionLabel" Text="Выберите действие" />
+                        <Button Name="PerformButton" Text="Выполнить действие" Disabled="True" />
+                    </BoxContainer>
+                </ScrollContainer>
+            </PanelContainer>
+
+            <PanelContainer Name="StatusTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
+                <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
+                    <BoxContainer Orientation="Vertical" SeparationOverride="6" Margin="6" HorizontalExpand="True">
+                        <Label Text="СОСТОЯНИЕ ЦЕЛИ" StyleClasses="LabelHeading" />
+                        <BoxContainer Orientation="Horizontal" SeparationOverride="8" HorizontalExpand="True">
+                            <SpriteView Name="HealthDollView" SetSize="88 132" Visible="False" />
+                            <Label Name="HealthAnalyzerLabel" Text="Нет данных" HorizontalExpand="True" />
+                        </BoxContainer>
+                    </BoxContainer>
+                </ScrollContainer>
+            </PanelContainer>
+
+            <PanelContainer Name="EquipmentTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
+                <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
+                    <BoxContainer Orientation="Vertical" SeparationOverride="6" Margin="6" HorizontalExpand="True">
+                        <Label Text="МЕДИЦИНСКИЕ СРЕДСТВА" StyleClasses="LabelHeading" />
+                        <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
+                        <PanelContainer StyleClasses="LowDivider" />
+                        <Button Name="AmmunitionToggleButton" Text="Показать боеприпасы" />
+                        <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
+                    </BoxContainer>
+                </ScrollContainer>
+            </PanelContainer>
+        </TabContainer>
+
         <PanelContainer StyleClasses="LowDivider" />
         <Label Name="TurnCountLabel" Text="Действий осталось: 2/2" />
-        <Label Name="TurnStateLabel" Text="Ваш ход" />
+        <Label Name="TurnStateLabel" Text="Можно действовать" />
     </BoxContainer>
 </controls:FancyWindow>

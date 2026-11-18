@@ -10,20 +10,28 @@ namespace Content.Client.UserInterface.Systems.Combat;
 [GenerateTypedNameReferences]
 public sealed partial class CombatPanelWindow : FancyWindow
 {
+    private const int MaxActionsPerTurn = 2;
+
     private string? _selectedAction;
     private string? _selectedPart;
     private EntityUid? _target;
     private string _targetName = "неизвестная цель";
     private string? _weaponName;
-    private const int MaxActionsPerTurn = 2;
     private int _remainingActions = MaxActionsPerTurn;
+    private bool _isIncoming;
+
     public EntityUid? Target => _target;
+    public bool IsIncoming => _isIncoming;
 
     public event Action<string>? EmoteRequested;
 
     public CombatPanelWindow()
     {
         RobustXamlLoader.Load(this);
+
+        TabContainer.SetTabTitle(CombatTab, "Действия");
+        TabContainer.SetTabTitle(StatusTab, "Состояние");
+        TabContainer.SetTabTitle(EquipmentTab, "Снаряжение");
 
         ShootButton.OnPressed += _ => SelectAction("shoots");
         StabButton.OnPressed += _ => SelectAction("stabs");
@@ -39,24 +47,42 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         PerformButton.OnPressed += _ => Perform();
         AmmunitionToggleButton.OnPressed += _ =>
+        {
             AmmunitionContainer.Visible = !AmmunitionContainer.Visible;
+            AmmunitionToggleButton.Text = AmmunitionContainer.Visible
+                ? "Скрыть боеприпасы"
+                : "Показать боеприпасы";
+        };
     }
 
     /// <summary>
-    /// Shows only actions supported by the item in the active hand.
-    /// Empty hands expose unarmed actions; guns expose shooting; melee weapons expose stabbing.
+    /// Reopening the same encounter refreshes its data without resetting turns or selection.
     /// </summary>
-    public void SetTarget(EntityUid target, string targetName)
+    public void SetTarget(EntityUid target, string targetName, bool incoming = false)
     {
+        var sameEncounter = _target == target && _isIncoming == incoming;
+
         _target = target;
         _targetName = targetName;
-        TargetNameLabel.Text = $"Цель: {targetName}";
-        _selectedPart = null;
-        _remainingActions = MaxActionsPerTurn;
-        UpdateTurnControls();
+        _isIncoming = incoming;
+
+        TargetNameLabel.Text = $"{(incoming ? "Нападающий" : "Цель")}: {targetName}";
+        EngagementInfoLabel.Text = incoming
+            ? "На вас направлено боевое действие. Вы можете ответить."
+            : "Вы выбрали цель для ролевого боевого действия.";
+
+        if (!sameEncounter)
+        {
+            _selectedAction = null;
+            _selectedPart = null;
+            _remainingActions = MaxActionsPerTurn;
+            BodyPartSelectionContainer.Visible = false;
+        }
+
         UpdatePartButtonHighlights();
         UpdateActionButtonHighlights();
         UpdateSelection();
+        UpdateTurnControls();
     }
 
     public void SetWeaponInfo(string info, string? weaponName = null)
@@ -72,12 +98,15 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)
     {
-        // FrameUpdate calls this repeatedly. Do not clear the player's current selection
-        // unless the available weapon actions actually changed.
-        if (ShootButton.Visible == hasGun
-            && StabButton.Visible == (!hasGun && hasMeleeWeapon)
-            && PunchButton.Visible == (!hasGun && !hasMeleeWeapon)
-            && KickButton.Visible == (!hasGun && !hasMeleeWeapon))
+        var shootVisible = ShootButton.Visible;
+        var stabVisible = StabButton.Visible;
+        var punchVisible = PunchButton.Visible;
+        var kickVisible = KickButton.Visible;
+
+        if (shootVisible == hasGun
+            && stabVisible == (!hasGun && hasMeleeWeapon)
+            && punchVisible == (!hasGun && !hasMeleeWeapon)
+            && kickVisible == (!hasGun && !hasMeleeWeapon))
         {
             UpdateTurnControls();
             return;
@@ -100,20 +129,71 @@ public sealed partial class CombatPanelWindow : FancyWindow
     public void SetAmmunitionItems(IEnumerable<(string Name, string Details, Action Use)> items)
     {
         AmmunitionContainer.RemoveAllChildren();
+
         foreach (var (name, details, use) in items)
         {
             var button = new Button
             {
                 Text = $"{name} — {details}",
                 HorizontalExpand = true,
-                Disabled = _remainingActions <= 0 && details.Contains("Зарядить"),
+                Disabled = _remainingActions <= 0 || details.Contains("нужно оружие"),
             };
-            button.OnPressed += _ => use();
+
+            button.OnPressed += _ =>
+            {
+                if (_remainingActions <= 0 || button.Disabled)
+                    return;
+
+                use();
+            };
+
             AmmunitionContainer.AddChild(button);
         }
+
         AmmunitionToggleButton.Disabled = AmmunitionContainer.ChildCount == 0;
         if (AmmunitionContainer.ChildCount == 0)
             AmmunitionContainer.Visible = false;
+
+        AmmunitionToggleButton.Text = AmmunitionContainer.Visible
+            ? "Скрыть боеприпасы"
+            : "Показать боеприпасы";
+    }
+
+    public void SetMedicalItems(IEnumerable<(string Name, Action Use)> items)
+    {
+        MedicalItemsContainer.RemoveAllChildren();
+
+        foreach (var (name, use) in items)
+        {
+            var button = new Button
+            {
+                Text = $"Оказать себе помощь: {name}",
+                HorizontalExpand = true,
+                Disabled = _remainingActions <= 0,
+            };
+
+            button.OnPressed += _ =>
+            {
+                if (_remainingActions <= 0)
+                    return;
+
+                use();
+            };
+
+            MedicalItemsContainer.AddChild(button);
+        }
+
+        MedicalItemsContainer.Visible = MedicalItemsContainer.ChildCount > 0;
+    }
+
+    public bool TryRequestEmote(string message)
+    {
+        if (_remainingActions <= 0)
+            return false;
+
+        EmoteRequested?.Invoke(message);
+        ConsumeTurn();
+        return true;
     }
 
     public void ConsumeTurn()
@@ -129,19 +209,29 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private void UpdateTurnControls()
     {
         TurnCountLabel.Text = $"Действий осталось: {_remainingActions}/{MaxActionsPerTurn}";
-        TurnStateLabel.Text = _remainingActions == 0 ? "Ожидание ответа соперника" : "Ваш ход";
+        TurnStateLabel.Text = _remainingActions == 0
+            ? "Ожидание ответа соперника"
+            : "Можно действовать";
+
         ShootButton.Disabled = _remainingActions == 0;
         StabButton.Disabled = _remainingActions == 0;
         PunchButton.Disabled = _remainingActions == 0;
         KickButton.Disabled = _remainingActions == 0;
-        PerformButton.Disabled = _remainingActions == 0 || _selectedAction == null
-            || _selectedAction != null && _selectedPart == null;
+        PerformButton.Disabled = _remainingActions == 0
+            || _selectedAction == null
+            || _selectedPart == null;
+
         foreach (var child in MedicalItemsContainer.Children)
+        {
             if (child is Button button)
                 button.Disabled = _remainingActions == 0;
+        }
+
         foreach (var child in AmmunitionContainer.Children)
+        {
             if (child is Button button)
-                button.Disabled = _remainingActions == 0;
+                button.Disabled = _remainingActions == 0 || button.Text.Contains("нужно оружие");
+        }
     }
 
     private void SelectAction(string action)
@@ -159,6 +249,9 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     private void SelectPart(string part)
     {
+        if (_remainingActions <= 0)
+            return;
+
         _selectedPart = part;
         UpdatePartButtonHighlights();
         UpdateSelection();
@@ -211,40 +304,17 @@ public sealed partial class CombatPanelWindow : FancyWindow
             HealthDollView.SetEntity(uid);
     }
 
-    public void SetMedicalItems(IEnumerable<(string Name, Action Use)> items)
-    {
-        MedicalItemsContainer.RemoveAllChildren();
-        foreach (var (name, use) in items)
-        {
-            var button = new Button
-            {
-                Text = $"Использовать {name}",
-                HorizontalExpand = true,
-            };
-            button.Disabled = _remainingActions <= 0;
-            button.OnPressed += _ =>
-            {
-                if (_remainingActions <= 0)
-                    return;
-                use();
-                ConsumeTurn();
-            };
-            MedicalItemsContainer.AddChild(button);
-        }
-        MedicalItemsContainer.Visible = MedicalItemsContainer.ChildCount > 0;
-    }
-
     private void UpdateSelection()
     {
-        var needsPart = _selectedAction != null;
-        PerformButton.Disabled = _remainingActions <= 0 || _selectedAction == null || needsPart && _selectedPart == null;
+        PerformButton.Disabled = _remainingActions <= 0
+            || _selectedAction == null
+            || _selectedPart == null;
+
         SelectionLabel.Text = _selectedAction == null
-            ? "Выбери действие"
-            : needsPart && _selectedPart == null
-                ? "Выбери часть тела"
-                : needsPart
-                    ? $"{GetActionLabel(_selectedAction)} → {_selectedPart}"
-                    : GetActionLabel(_selectedAction);
+            ? "Выберите действие"
+            : _selectedPart == null
+                ? "Теперь выберите часть тела"
+                : $"{GetActionLabel(_selectedAction)} → {GetPartLabel(_selectedPart)}";
     }
 
     private static string GetActionLabel(string action)
@@ -259,24 +329,38 @@ public sealed partial class CombatPanelWindow : FancyWindow
         };
     }
 
+    private static string GetPartLabel(string part)
+    {
+        return part switch
+        {
+            "head" => "голова",
+            "chest" => "грудь",
+            "left arm" => "левая рука",
+            "right arm" => "правая рука",
+            "left leg" => "левая нога",
+            "right leg" => "правая нога",
+            _ => part,
+        };
+    }
+
     private void Perform()
     {
-        if (_remainingActions <= 0 || _selectedAction == null || _selectedPart == null)
+        if (_selectedAction == null || _selectedPart == null || _remainingActions <= 0)
             return;
+
+        var part = GetPartLabel(_selectedPart);
+        var weapon = string.IsNullOrWhiteSpace(_weaponName) ? "оружия" : $"«{_weaponName}»";
 
         var message = _selectedAction switch
         {
-            "shoots" => $"shoots {_targetName} in the {_selectedPart} using {_weaponName ?? "a firearm"}",
-            "stabs" => $"stabs {_targetName} in the {_selectedPart} using {_weaponName ?? "a weapon"}",
-            "punches" => $"punches {_targetName} in the {_selectedPart}",
-            "kicks" => $"kicks {_targetName} in the {_selectedPart}",
+            "shoots" => $"пытается атаковать «{_targetName}»: стреляет в область «{part}» из {weapon}",
+            "stabs" => $"пытается атаковать «{_targetName}»: наносит удар ножом в область «{part}» с помощью {weapon}",
+            "punches" => $"пытается атаковать «{_targetName}»: бьёт кулаком в область «{part}»",
+            "kicks" => $"пытается атаковать «{_targetName}»: наносит удар ногой в область «{part}»",
             _ => null,
         };
 
         if (message != null)
-        {
-            EmoteRequested?.Invoke(message);
-            ConsumeTurn();
-        }
+            TryRequestEmote(message);
     }
 }
