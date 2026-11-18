@@ -47,7 +47,12 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         PerformButton.OnPressed += _ => Perform();
         AmmunitionToggleButton.OnPressed += _ =>
+        {
             AmmunitionContainer.Visible = !AmmunitionContainer.Visible;
+            AmmunitionToggleButton.Text = AmmunitionContainer.Visible
+                ? "Скрыть боеприпасы"
+                : "Показать боеприпасы";
+        };
     }
 
     /// <summary>
@@ -148,6 +153,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
         AmmunitionToggleButton.Disabled = AmmunitionContainer.ChildCount == 0;
         if (AmmunitionContainer.ChildCount == 0)
             AmmunitionContainer.Visible = false;
+
+        AmmunitionToggleButton.Text = AmmunitionContainer.Visible
+            ? "Скрыть боеприпасы"
+            : "Показать боеприпасы";
     }
 
     public void SetMedicalItems(IEnumerable<(string Name, Action Use)> items)
