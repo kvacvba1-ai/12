@@ -72,8 +72,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         <BoxContainer Orientation="Horizontal" SeparationOverride="10" HorizontalExpand="True">
                             <SpriteView Name="HealthDollView" SetSize="112 168" Visible="False" />
                             <Label Name="HealthAnalyzerLabel" Text="НЕТ ДАННЫХ О СОСТОЯНИИ" HorizontalExpand="True" />
-                        <Label Name="BodyStatusLabel" Text="НЕТ ДАННЫХ О ПОВРЕЖДЕНИЯХ ПО ЧАСТЯМ ТЕЛА" StyleClasses="LabelSmall" />
                         </BoxContainer>
+                        <Label Name="BodyStatusLabel" Text="НЕТ ДАННЫХ О ПОВРЕЖДЕНИЯХ ПО ЧАСТЯМ ТЕЛА" StyleClasses="LabelSmall" />
                     </BoxContainer>
                 </ScrollContainer>
             </PanelContainer>
