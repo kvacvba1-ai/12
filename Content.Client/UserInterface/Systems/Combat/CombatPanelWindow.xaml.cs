@@ -121,6 +121,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
             _selectedAction = null;
             _selectedPart = null;
             _remainingActions = MaxActionsPerTurn;
+            _miniGameActive = false;
+            _miniGameResolved = false;
+            _pendingAttackMessage = null;
+            MiniGameContainer.Visible = false;
             BodyPartSelectionContainer.Visible = false;
         }
 
