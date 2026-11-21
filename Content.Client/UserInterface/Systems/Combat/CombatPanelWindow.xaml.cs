@@ -16,6 +16,7 @@ namespace Content.Client.UserInterface.Systems.Combat;
 public sealed partial class CombatPanelWindow : FancyWindow
 {
     private const int MaxActionsPerTurn = 2;
+    private const int RingAttemptsPerAttack = 2;
 
     private string? _selectedAction;
     private string? _selectedPart;
@@ -79,18 +80,6 @@ public sealed partial class CombatPanelWindow : FancyWindow
         CombatTab.PanelOverride = insetFrame;
         StatusTab.PanelOverride = insetFrame;
         EquipmentTab.PanelOverride = insetFrame;
-
-        var copperTint = new Color(222, 187, 153);
-        foreach (var button in new[]
-        {
-            ShootButton, StabButton, PunchButton, KickButton,
-            HeadButton, ChestButton, LeftArmButton, RightArmButton,
-            LeftLegButton, RightLegButton, PerformButton, MiniGameHitButton,
-            AmmunitionToggleButton,
-        })
-        {
-            button.ModulateSelfOverride = copperTint;
-        }
 
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
@@ -223,8 +212,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             {
                 Text = $"{name} - {details}",
                 HorizontalExpand = true,
-                ModulateSelfOverride = new Color(222, 187, 153),
-                Disabled = _remainingActions <= 0 || !isAvailable,
+                                Disabled = _remainingActions <= 0 || !isAvailable,
             };
             _ammunitionButtonAvailability[button] = isAvailable;
 
@@ -479,7 +467,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _timingRing.Visible = radial;
         MiniGameTitleLabel.Text = radial ? "БАЛЛИСТИЧЕСКИЙ КОНТРОЛЬ" : "КОНТРОЛЬ УДАРА";
         MiniGameHintLabel.Text = radial
-            ? $"ПОПЫТКИ: {_weaponShots}. Попадайте в один из двух красных секторов"
+            ? $"ПОПЫТКИ: {RingAttemptsPerAttack}. Попадайте в один из двух красных секторов"
             : "Зафиксируйте удар, когда ползунок окажется в зелёной зоне";
         MiniGameHitButton.Text = "ЗАФИКСИРОВАТЬ";
         MiniGameStatusLabel.Text = "ОЖИДАНИЕ МОМЕНТА...";
@@ -502,15 +490,15 @@ public sealed partial class CombatPanelWindow : FancyWindow
         }
 
         _ringCompleted++;
-        if (_ringCompleted >= _weaponShots)
+        if (_ringCompleted >= RingAttemptsPerAttack)
         {
             ResolveMiniGame();
             return;
         }
 
         _timingRing.AdvanceTarget();
-        MiniGameHitButton.Text = $"ПОПАДАНИЕ {_ringCompleted + 1}/{_weaponShots}";
-        MiniGameStatusLabel.Text = $"СЛЕДУЮЩАЯ ПОПЫТКА // {_ringCompleted + 1} ИЗ {_weaponShots}";
+        MiniGameHitButton.Text = $"ПОПАДАНИЕ {_ringCompleted + 1}/{RingAttemptsPerAttack}";
+        MiniGameStatusLabel.Text = $"СЛЕДУЮЩАЯ ПОПЫТКА // {_ringCompleted + 1} ИЗ {RingAttemptsPerAttack}";
     }
 
     private void ResolveMiniGame(bool forceMiss = false)
@@ -524,7 +512,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             if (_ringMiniGame)
             {
                 var successes = _ringSuccesses;
-                quality = successes == _weaponShots ? "точно" : successes > 0 ? "удачно" : "мимо";
+                quality = successes == RingAttemptsPerAttack ? "точно" : successes > 0 ? "удачно" : "мимо";
             }
             else
             {
@@ -534,7 +522,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         }
 
         var message = _ringMiniGame
-            ? $"{_pendingAttackMessage} (попаданий: {_ringSuccesses}/{_weaponShots}; {quality})"
+            ? $"{_pendingAttackMessage} (попаданий: {_ringSuccesses}/{RingAttemptsPerAttack}; {quality})"
             : $"{_pendingAttackMessage} (результат мини-игры: {quality})";
 
         if (!_ringMiniGame && !forceMiss && (quality is "идеально" or "удачно"))
