@@ -13,7 +13,7 @@ using System.Numerics;
 namespace Content.Client.UserInterface.Systems.Combat;
 
 [GenerateTypedNameReferences]
-public sealed partial class CombatPanelWindow : FancyWindow
+public sealed partial class CombatPanelWindow : Window
 {
     private const int MaxActionsPerTurn = 2;
     private const int RingAttemptsPerAttack = 2;
@@ -62,6 +62,18 @@ public sealed partial class CombatPanelWindow : FancyWindow
             HighlightColor = new Color(174, 126, 83),
             BorderThickness = new Thickness(3),
             CornerRadius = 13f,
+        };
+        // The native Window root gets its own frame; no FancyWindow chrome or stock grey shell.
+        PanelOverride = new StyleBoxPanel
+        {
+            BackgroundColor = new Color(12, 13, 14),
+            BorderColor = new Color(145, 91, 58),
+            InnerBorderColor = new Color(48, 39, 34),
+            HighlightColor = new Color(194, 143, 95),
+            AccentColor = new Color(133, 36, 35),
+            BorderThickness = new Thickness(4),
+            CornerRadius = 16f,
+            RivetRadius = 3f,
         };
         var insetFrame = new StyleBoxPanel
         {
