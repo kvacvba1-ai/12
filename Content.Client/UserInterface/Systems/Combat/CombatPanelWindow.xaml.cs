@@ -230,7 +230,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         foreach (var child in AmmunitionContainer.Children)
         {
             if (child is Button button)
-                button.Disabled = _remainingActions == 0 || button.Text.Contains("нужно оружие");
+                button.Disabled = _remainingActions == 0 || button.Text?.Contains("нужно оружие") == true;
         }
     }
 
