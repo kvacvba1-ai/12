@@ -171,7 +171,7 @@ public sealed partial class ChatUIController : UIController
     private Dictionary<TargetBodyPart, WoundableSeverity>? _lastBodyStatus;
     private static readonly EntProtoId HealthDollPrototype = "AlertSpriteView";
     // Counts consecutive combat actions received from each opponent. Two actions complete their turn.
-    private readonly Dictionary<EntityUid, int> _incomingCombatActions = new();
+    private readonly Dictionary<EntityUid, (int Count, TimeSpan LastReceived)> _incomingCombatActions = new();
 
     public bool CombatPanelModeEnabled => _combatPanelModeEnabled;
 
@@ -1092,7 +1092,12 @@ public sealed partial class ChatUIController : UIController
 
         // A turn is completed only after two distinct incoming combat emotes.
         // Opening/reopening the window is presentation only and never grants actions.
-        var receivedActions = _incomingCombatActions.GetValueOrDefault(attacker) + 1;
+        var previous = _incomingCombatActions.GetValueOrDefault(attacker);
+        var receivedActions = previous.Count;
+        if (receivedActions > 0 && _timing.CurTime - previous.LastReceived > TimeSpan.FromMinutes(10))
+            receivedActions = 0;
+
+        receivedActions++;
         if (receivedActions >= 2)
         {
             _incomingCombatActions.Remove(attacker);
@@ -1101,7 +1106,7 @@ public sealed partial class ChatUIController : UIController
         }
         else
         {
-            _incomingCombatActions[attacker] = receivedActions;
+            _incomingCombatActions[attacker] = (receivedActions, _timing.CurTime);
             OpenCombatPanel(attacker, incoming: true);
             _combatPanelWindow?.SetRemainingActions(0);
         }
