@@ -170,6 +170,8 @@ public sealed partial class ChatUIController : UIController
     private EntityUid? _healthDollEntity;
     private Dictionary<TargetBodyPart, WoundableSeverity>? _lastBodyStatus;
     private static readonly EntProtoId HealthDollPrototype = "AlertSpriteView";
+    // Counts consecutive combat actions received from each opponent. Two actions complete their turn.
+    private readonly Dictionary<EntityUid, int> _incomingCombatActions = new();
 
     public bool CombatPanelModeEnabled => _combatPanelModeEnabled;
 
@@ -1084,8 +1086,21 @@ public sealed partial class ChatUIController : UIController
         if (!_ent.EntityExists(attacker) || !_ent.HasComponent<MobStateComponent>(attacker))
             return;
 
-        // The emote is delivered through normal local chat, so no custom server channel is needed.
-        OpenCombatPanel(attacker, incoming: true);
+        // A turn is completed only after two distinct incoming combat emotes.
+        // Opening/reopening the window is presentation only and never grants actions.
+        var receivedActions = _incomingCombatActions.GetValueOrDefault(attacker) + 1;
+        if (receivedActions >= 2)
+        {
+            _incomingCombatActions.Remove(attacker);
+            OpenCombatPanel(attacker, incoming: true);
+            _combatPanelWindow?.SetRemainingActions(2);
+        }
+        else
+        {
+            _incomingCombatActions[attacker] = receivedActions;
+            OpenCombatPanel(attacker, incoming: true);
+            _combatPanelWindow?.SetRemainingActions(0);
+        }
     }
 
     public void OpenCombatPanel(EntityUid target, bool incoming = false)
@@ -1102,8 +1117,8 @@ public sealed partial class ChatUIController : UIController
         }
 
         var targetName = Identity.Name(target, _ent);
-        var sameEncounter = _combatPanelWindow.Target == target
-            && _combatPanelWindow.IsIncoming == incoming;
+        // Direction is not encounter identity: right-clicking the same opponent must not reset turns.
+        var sameEncounter = _combatPanelWindow.Target == target;
 
         _combatPanelWindow.SetTarget(target, targetName, incoming);
         UpdateCombatPanelActions();
