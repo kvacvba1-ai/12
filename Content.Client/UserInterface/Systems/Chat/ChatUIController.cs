@@ -1155,12 +1155,13 @@ public sealed partial class ChatUIController : UIController
         if (!_combatPanelWindow.IsOpen)
             _combatPanelWindow.Open();
 
-        if (_player.LocalEntity is { } musicRecipient && _combatPanelMusic == null)
+        if (_player.LocalEntity is { } musicRecipient && _stopCombatPanelMusic == null)
         {
-            _combatPanelMusic = _ent.System<AudioSystem>().PlayGlobal(
+            var music = _ent.System<AudioSystem>().PlayGlobal(
                 "/Audio/Misc/YyYO8Si3WVA5QBwC4KaR1QQTDNvJDOE.ogg",
                 musicRecipient,
                 Robust.Shared.Audio.AudioParams.Default.WithLoop(true).WithVolume(-12f));
+            _stopCombatPanelMusic = music.Stop;
         }
     }
 
