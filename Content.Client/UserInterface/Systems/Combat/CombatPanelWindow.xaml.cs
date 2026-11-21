@@ -74,7 +74,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
             CornerRadius = 13f,
         };
         // The custom BaseWindow root gets its own frame; no stock window chrome.
-        PanelOverride = new StyleBoxPanel
+        WindowFrame.PanelOverride = new StyleBoxPanel
         {
             BackgroundColor = new Color(12, 13, 14),
             BorderColor = new Color(145, 91, 58),
