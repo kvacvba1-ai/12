@@ -11,7 +11,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         <PanelContainer Name="HeaderFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
             <GridContainer Columns="2" Margin="9" HorizontalExpand="True">
                 <BoxContainer Orientation="Vertical" SeparationOverride="2" HorizontalExpand="True">
-                    <Label Text="FIELD COMBAT TERMINAL" StyleClasses="LabelHeading" />
+                    <Label Text="/// FIELD COMBAT TERMINAL ///" StyleClasses="LabelHeading" />
+                    <Label Text="⚠ LIVE ORDNANCE // AUTHORIZED PERSONNEL ONLY" StyleClasses="LabelSmall" />
                     <Label Name="TargetNameLabel" Text="TARGET // UNKNOWN" StyleClasses="LabelBig" />
                     <Label Name="EngagementInfoLabel" Text="NO ACTIVE ENGAGEMENT" />
                 </BoxContainer>
@@ -27,7 +28,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
-                        <Label Text="// ACTION SELECT" StyleClasses="LabelHeading" />
+                        <Label Text="/// ACTION SELECT  ━━━━━━━━━━━━━━━━━━━" StyleClasses="LabelHeading" />
                         <GridContainer Columns="2" HorizontalExpand="True">
                             <Button Name="ShootButton" Text="[01] FIREARM / SHOT" />
                             <Button Name="StabButton" Text="[02] MELEE / STAB" />
@@ -56,7 +57,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <PanelContainer Name="StatusTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
-                        <Label Text="// TARGET DIAGNOSTICS" StyleClasses="LabelHeading" />
+                        <Label Text="/// TARGET DIAGNOSTICS  ━━━━━━━━━━━━━" StyleClasses="LabelHeading" />
                         <BoxContainer Orientation="Horizontal" SeparationOverride="10" HorizontalExpand="True">
                             <SpriteView Name="HealthDollView" SetSize="112 168" Visible="False" />
                             <Label Name="HealthAnalyzerLabel" Text="NO VITAL DATA" HorizontalExpand="True" />
@@ -68,10 +69,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <PanelContainer Name="EquipmentTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
-                        <Label Text="// MEDICAL INVENTORY" StyleClasses="LabelHeading" />
+                        <Label Text="/// MEDICAL INVENTORY  ━━━━━━━━━━━━━━━" StyleClasses="LabelHeading" />
                         <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
                         <PanelContainer StyleClasses="LowDivider" />
-                        <Label Text="// AMMUNITION &amp; CONSUMABLES" StyleClasses="LabelHeading" />
+                        <Label Text="⚠ AMMUNITION &amp; CONSUMABLES ///" StyleClasses="LabelHeading" />
                         <Button Name="AmmunitionToggleButton" Text="OPEN INVENTORY" />
                         <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
                     </BoxContainer>
@@ -98,6 +99,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <BoxContainer Orientation="Vertical" SeparationOverride="2">
                     <Label Text="COMBAT STATE" StyleClasses="LabelHeading" />
                     <Label Name="TurnStateLabel" Text="READY FOR ACTION" />
+                    <Label Text="FIELD UNIT // TRenchface SYSTEMS" StyleClasses="LabelSmall" />
                 </BoxContainer>
             </GridContainer>
         </PanelContainer>
