@@ -278,13 +278,13 @@ public sealed partial class CombatPanelWindow : FancyWindow
         foreach (var child in MedicalItemsContainer.Children)
         {
             if (child is Button button)
-                button.Disabled = _remainingActions <= 0;
+                button.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
         }
 
         foreach (var child in AmmunitionContainer.Children)
         {
             if (child is Button button)
-                button.Disabled = _remainingActions <= 0
+                button.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved
                     || !_ammunitionButtonAvailability.GetValueOrDefault(button);
         }
     }
@@ -361,7 +361,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     private void UpdateSelection()
     {
-        PerformButton.Disabled = _remainingActions <= 0
+        PerformButton.Disabled = _miniGameActive || _miniGameResolved || _remainingActions <= 0
             || _selectedAction == null
             || _selectedPart == null;
 
