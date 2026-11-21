@@ -578,7 +578,6 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         if (_selectedAction is "shoots" or "stabs")
         {
-            AttackSoundRequested?.Invoke(_selectedAction == "shoots");
             BeginMiniGame(message, radial: _selectedAction == "shoots");
         }
         else
