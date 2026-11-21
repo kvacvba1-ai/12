@@ -84,7 +84,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <Label Name="MiniGameTitleLabel" Text="TIMING CHECK" StyleClasses="LabelHeading" />
                 <Label Name="MiniGameHintLabel" Text="WAIT FOR THE WINDOW" />
                 <BoxContainer Name="MiniGameVisualContainer" Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Center" MinSize="190 190" />
-                <ProgressBar Name="MiniGameProgress" MinValue="0" MaxValue="100" Value="0" HorizontalExpand="True" />
                 <Label Name="MiniGameStatusLabel" Text="READY" StyleClasses="LabelHeading" />
                 <Button Name="MiniGameHitButton" Text="LOCK TIMING" />
             </BoxContainer>
