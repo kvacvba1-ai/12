@@ -529,7 +529,9 @@ public sealed partial class CombatPanelWindow : FancyWindow
             else
             {
                 var distance = MathF.Abs(_barPosition - 0.5f);
-                quality = distance <= 0.09f ? "идеально" : distance <= 0.22f ? "удачно" : "мимо";
+                quality = distance <= TimingBarControl.PerfectHalfWidth ? "идеально"
+                    : distance <= TimingBarControl.GoodHalfWidth ? "удачно"
+                    : "мимо";
             }
         }
 
@@ -592,7 +594,7 @@ internal sealed class TimingRingControl : Control
     private int _targetCount = TargetSectorCount;
     private int _targetIndex;
     private const float RotationSpeed = MathF.PI * 1.35f;
-    private const float SectorHalfWidth = 0.19f;
+    private const float SectorHalfWidth = 0.34f;
 
     public bool IsInTargetSector
     {
@@ -645,22 +647,42 @@ internal sealed class TimingRingControl : Control
 
     private static void DrawSector(DrawingHandleScreen handle, Vector2 center, float radius, float start, float end, Color color)
     {
-        var previous = center + new Vector2(MathF.Cos(start), MathF.Sin(start)) * radius;
-        const int segments = 16;
+        // Render the full annular hit window so its visible size matches hit testing.
+        const int segments = 40;
+        var innerRadius = radius * 0.58f;
+        var previousOuter = center + new Vector2(MathF.Cos(start), MathF.Sin(start)) * radius;
+        var previousInner = center + new Vector2(MathF.Cos(start), MathF.Sin(start)) * innerRadius;
+
         for (var i = 1; i <= segments; i++)
         {
             var angle = start + (end - start) * i / segments;
-            var next = center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius;
-            handle.DrawLine(previous, next, color);
-            handle.DrawCircle(next, 3.5f, color, true);
-            previous = next;
+            var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+            var outer = center + direction * radius;
+            var inner = center + direction * innerRadius;
+            handle.DrawLine(inner, outer, color);
+            if (i > 1)
+            {
+                handle.DrawLine(previousOuter, outer, color);
+                handle.DrawLine(previousInner, inner, color);
+            }
+
+            previousOuter = outer;
+            previousInner = inner;
         }
+
+        var startDirection = new Vector2(MathF.Cos(start), MathF.Sin(start));
+        var endDirection = new Vector2(MathF.Cos(end), MathF.Sin(end));
+        handle.DrawLine(center + startDirection * innerRadius, center + startDirection * radius, color);
+        handle.DrawLine(center + endDirection * innerRadius, center + endDirection * radius, color);
     }
 }
 
 /// <summary>Undertale-style moving marker timing bar with a fixed green hit window.</summary>
 internal sealed class TimingBarControl : Control
 {
+    public const float PerfectHalfWidth = 0.10f;
+    public const float GoodHalfWidth = 0.35f;
+
     public float MarkerPosition { get; set; }
 
     protected override void Draw(DrawingHandleScreen handle)
@@ -672,7 +694,15 @@ internal sealed class TimingBarControl : Control
         var width = size.X * 0.92f;
         var height = MathF.Max(8f, size.Y * 0.25f);
         handle.DrawRect(UIBox2.FromDimensions(new Vector2(left, y - height / 2f), new Vector2(width, height)), new Color(65, 65, 62));
-        handle.DrawRect(UIBox2.FromDimensions(new Vector2(left + width * 0.43f, y - height / 2f), new Vector2(width * 0.14f, height)), new Color(70, 132, 105));
+
+        var goodLeft = 0.5f - GoodHalfWidth;
+        handle.DrawRect(
+            UIBox2.FromDimensions(new Vector2(left + width * goodLeft, y - height / 2f),
+                new Vector2(width * GoodHalfWidth * 2f, height)), new Color(62, 112, 83));
+        var perfectLeft = 0.5f - PerfectHalfWidth;
+        handle.DrawRect(
+            UIBox2.FromDimensions(new Vector2(left + width * perfectLeft, y - height / 2f),
+                new Vector2(width * PerfectHalfWidth * 2f, height)), new Color(112, 174, 119));
         var markerX = left + width * MarkerPosition;
         handle.DrawLine(new Vector2(markerX, y - height), new Vector2(markerX, y + height), new Color(238, 238, 220));
         handle.DrawCircle(new Vector2(markerX, y), 5f, new Color(238, 238, 220));
