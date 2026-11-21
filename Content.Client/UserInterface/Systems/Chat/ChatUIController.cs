@@ -1169,12 +1169,19 @@ public sealed partial class ChatUIController : UIController
         if (heldItem is { } held)
         {
             var heldName = Identity.Name(held, _ent);
+            var shots = 1;
             if (_ent.TryGetComponent<BallisticAmmoProviderComponent>(held, out var ballistic))
-                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {ballistic.Count}/{ballistic.Capacity}", heldName);
+            {
+                shots = Math.Max(1, ballistic.Count);
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {ballistic.Count}/{ballistic.Capacity}", heldName, shots);
+            }
             else if (_ent.TryGetComponent<BasicEntityAmmoProviderComponent>(held, out var basic))
-                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {basic.Count ?? 0}/{basic.Capacity ?? 0}", heldName);
+            {
+                shots = Math.Max(1, basic.Count ?? 0);
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {basic.Count ?? 0}/{basic.Capacity ?? 0}", heldName, shots);
+            }
             else if (hasGun)
-                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nОгнестрельное оружие", heldName);
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nОгнестрельное оружие", heldName, shots);
             else if (hasMeleeWeapon)
                 _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nОружие ближнего боя", heldName);
             else
