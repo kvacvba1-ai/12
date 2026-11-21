@@ -1082,8 +1082,8 @@ public sealed partial class ChatUIController : UIController
             return;
 
         var localName = Identity.Name(localPlayer, _ent);
-        var targetPrefix = $"пытается атаковать «{localName}»:";
-        var engagementMarker = $"в рамках столкновения с «{localName}»";
+        var targetPrefix = $"пытается атаковать "{localName}":";
+        var engagementMarker = $"в рамках столкновения с "{localName}"";
         if (!message.Message.StartsWith(targetPrefix, StringComparison.CurrentCultureIgnoreCase)
             && !message.Message.Contains(engagementMarker, StringComparison.CurrentCultureIgnoreCase))
             return;
@@ -1341,7 +1341,7 @@ public sealed partial class ChatUIController : UIController
                         return;
 
                     _combatPanelWindow?.TryRequestEmote(
-                        $"пытается оказать себе медицинскую помощь с помощью «{capturedName}» в рамках столкновения с «{opponentName}»");
+                        $"пытается оказать себе медицинскую помощь с помощью "{capturedName}" в рамках столкновения с "{opponentName}"");
                 }));
             }
 
@@ -1458,8 +1458,8 @@ public sealed partial class ChatUIController : UIController
                             : 1;
                 var capturedItem = item;
                 var details = isAmmo
-                    ? $"{amount} шт. — {(canReload ? "для перезарядки" : "нужно оружие в активной руке")}"
-                    : $"{amount} шт. — расходник";
+                    ? $"{amount} шт. - {(canReload ? "для перезарядки" : "нужно оружие в активной руке")}"
+                    : $"{amount} шт. - расходник";
 
                 items.Add((itemName, details, !isAmmo || canReload, () =>
                 {
@@ -1475,11 +1475,11 @@ public sealed partial class ChatUIController : UIController
 
                         var gunName = Identity.Name(targetGun, _ent);
                         _combatPanelWindow?.TryRequestEmote(
-                            $"перезаряжает «{gunName}» с помощью «{itemName}» в рамках столкновения с «{opponentName}»");
+                            $"перезаряжает "{gunName}" с помощью "{itemName}" в рамках столкновения с "{opponentName}"");
                     }
                     else if (isThrowable)
                     {
-                        _combatPanelWindow?.TryRequestEmote($"готовит к применению «{itemName}» в рамках столкновения с «{opponentName}»");
+                        _combatPanelWindow?.TryRequestEmote($"готовит к применению "{itemName}" в рамках столкновения с "{opponentName}"");
                     }
                 }));
             }
