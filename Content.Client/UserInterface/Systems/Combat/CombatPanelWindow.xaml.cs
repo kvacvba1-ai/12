@@ -224,6 +224,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             {
                 Text = $"{name} - {details}",
                 HorizontalExpand = true,
+                ModulateSelfOverride = new Color(222, 187, 153),
                 Disabled = _remainingActions <= 0 || !isAvailable,
             };
             _ammunitionButtonAvailability[button] = isAvailable;
@@ -258,6 +259,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             {
                 Text = $"Оказать себе помощь: {name}",
                 HorizontalExpand = true,
+                ModulateSelfOverride = new Color(222, 187, 153),
                 Disabled = _remainingActions <= 0,
             };
 
