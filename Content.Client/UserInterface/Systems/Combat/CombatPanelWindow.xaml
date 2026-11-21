@@ -11,6 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <Label Text="TACTICAL INTERFACE  •  SECURE CHANNEL" StyleClasses="LabelSmall" />
                 </BoxContainer>
                 <Label Text="● ONLINE" StyleClasses="LabelSmall" />
+                <Button Name="MinimizeWindowButton" Text="—" MinSize="34 28" />
                 <Button Name="CloseWindowButton" Text="✕" MinSize="34 28" />
             </BoxContainer>
         </PanelContainer>
