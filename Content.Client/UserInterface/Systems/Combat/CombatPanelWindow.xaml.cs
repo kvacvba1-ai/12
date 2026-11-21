@@ -206,7 +206,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         _selectedAction = null;
         _selectedPart = null;
-        BodyPartSelectionContainer.Visible = false;
+        TargetZoneFrame.Visible = false;
         UpdatePartButtonHighlights();
         UpdateActionButtonHighlights();
         UpdateSelection();
@@ -562,14 +562,14 @@ public sealed partial class CombatPanelWindow : FancyWindow
             return;
 
         var part = GetPartLabel(_selectedPart);
-        var weapon = string.IsNullOrWhiteSpace(_weaponName) ? "оружия ближнего боя" : $""{_weaponName}"";
+        var weapon = string.IsNullOrWhiteSpace(_weaponName) ? "оружия ближнего боя" : $"«{_weaponName}»";
 
         var message = _selectedAction switch
         {
-            "shoots" => $"пытается атаковать "{_targetName}": стреляет в область "{part}" из {weapon}",
-            "stabs" => $"пытается атаковать "{_targetName}": наносит удар оружием {weapon} в область "{part}"",
-            "punches" => $"пытается атаковать "{_targetName}": бьёт кулаком в область "{part}"",
-            "kicks" => $"пытается атаковать "{_targetName}": наносит удар ногой в область "{part}"",
+            "shoots" => $"пытается атаковать «{_targetName}»: стреляет в область «{part}» из {weapon}",
+            "stabs" => $"пытается атаковать «{_targetName}»: наносит удар оружием {weapon} в область «{part}»",
+            "punches" => $"пытается атаковать «{_targetName}»: бьёт кулаком в область «{part}»",
+            "kicks" => $"пытается атаковать «{_targetName}»: наносит удар ногой в область «{part}»",
             _ => null,
         };
 
@@ -578,6 +578,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         if (_selectedAction is "shoots" or "stabs")
         {
+            AttackSoundRequested?.Invoke(_selectedAction == "shoots");
             BeginMiniGame(message, radial: _selectedAction == "shoots");
         }
         else
