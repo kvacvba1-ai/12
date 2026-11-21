@@ -1127,6 +1127,7 @@ public sealed partial class ChatUIController : UIController
 
         _healthDollEntity = null;
         _lastBodyStatus = null;
+        _combatPanelWindow?.SetHealthDoll(null);
     }
 
     private void UpdateCombatPanelActions()
