@@ -71,7 +71,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         <Label Text="// MEDICAL INVENTORY" StyleClasses="LabelHeading" />
                         <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
                         <PanelContainer StyleClasses="LowDivider" />
-                        <Label Text="// AMMUNITION & CONSUMABLES" StyleClasses="LabelHeading" />
+                        <Label Text="// AMMUNITION &amp; CONSUMABLES" StyleClasses="LabelHeading" />
                         <Button Name="AmmunitionToggleButton" Text="OPEN INVENTORY" />
                         <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
                     </BoxContainer>

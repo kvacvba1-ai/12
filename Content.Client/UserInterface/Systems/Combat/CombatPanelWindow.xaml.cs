@@ -417,7 +417,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             _barPosition += (_barForward ? 1 : -1) * args.DeltaSeconds * speed;
             if (_barPosition >= 1f) { _barPosition = 1f; _barForward = false; }
             else if (_barPosition <= 0f) { _barPosition = 0f; _barForward = true; }
-            _timingBar.Position = _barPosition;
+            _timingBar.MarkerPosition = _barPosition;
         }
 
         if (_miniGameElapsed >= 8f)
@@ -520,7 +520,7 @@ internal sealed class TimingRingControl : Control
     public void Reset() => _angle = 0f;
     public void Advance(float delta) => _angle = (_angle + delta * RotationSpeed) % (MathF.PI * 2f);
 
-    protected internal override void Draw(DrawingHandleScreen handle)
+    protected override void Draw(DrawingHandleScreen handle)
     {
         base.Draw(handle);
         var size = PixelSizeBox.Size;
@@ -552,7 +552,7 @@ internal sealed class TimingRingControl : Control
 /// <summary>Undertale-style moving marker timing bar with a fixed green hit window.</summary>
 internal sealed class TimingBarControl : Control
 {
-    public float Position { get; set; }
+    public float MarkerPosition { get; set; }
 
     protected internal override void Draw(DrawingHandleScreen handle)
     {
