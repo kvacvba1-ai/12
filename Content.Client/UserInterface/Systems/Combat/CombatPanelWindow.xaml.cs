@@ -53,6 +53,11 @@ public sealed partial class CombatPanelWindow : BaseWindow
         Resizable = true;
         MinSize = new Vector2(620, 660);
         CloseWindowButton.OnPressed += _ => Close();
+        MinimizeWindowButton.OnPressed += _ =>
+        {
+            WindowBody.Visible = !WindowBody.Visible;
+            MinimizeWindowButton.Text = WindowBody.Visible ? "—" : "＋";
+        };
         _timingRing.MinSize = new Vector2(190, 190);
         _timingBar.MinSize = new Vector2(300, 54);
         MiniGameVisualContainer.AddChild(_timingRing);
@@ -175,7 +180,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
             return mode;
 
         // The rightmost header area is reserved for the close control.
-        if (relativeMousePos.Y < headerHeight && relativeMousePos.X < Size.X - 54f)
+        if (relativeMousePos.Y < headerHeight && relativeMousePos.X < Size.X - 104f)
             return DragMode.Move;
 
         return DragMode.None;
