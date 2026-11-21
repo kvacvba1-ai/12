@@ -25,6 +25,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private bool _isIncoming;
     private readonly Dictionary<Button, bool> _ammunitionButtonAvailability = new();
     private readonly TimingRingControl _timingRing = new();
+    private readonly TimingBarControl _timingBar = new();
     private bool _miniGameActive;
     private bool _ringMiniGame;
     private float _miniGameElapsed;
@@ -40,8 +41,12 @@ public sealed partial class CombatPanelWindow : FancyWindow
     public CombatPanelWindow()
     {
         RobustXamlLoader.Load(this);
+        _timingRing.MinSize = new Vector2(190, 190);
+        _timingBar.MinSize = new Vector2(300, 54);
         MiniGameVisualContainer.AddChild(_timingRing);
+        MiniGameVisualContainer.AddChild(_timingBar);
         _timingRing.Visible = false;
+        _timingBar.Visible = false;
 
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
@@ -384,7 +389,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             _barPosition += (_barForward ? 1 : -1) * args.DeltaSeconds * speed;
             if (_barPosition >= 1f) { _barPosition = 1f; _barForward = false; }
             else if (_barPosition <= 0f) { _barPosition = 0f; _barForward = true; }
-            MiniGameProgress.Value = _barPosition * 100f;
+            _timingBar.Position = _barPosition;
         }
 
         if (_miniGameElapsed >= 8f)
@@ -401,7 +406,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _barForward = true;
         MiniGameContainer.Visible = true;
         MiniGameVisualContainer.Visible = radial;
-        MiniGameProgress.Visible = !radial;
+        _timingBar.Visible = !radial;
         _timingRing.Visible = radial;
         MiniGameTitleLabel.Text = radial ? "БАЛЛИСТИЧЕСКИЙ КОНТРОЛЬ" : "КОНТРОЛЬ УДАРА";
         MiniGameHintLabel.Text = radial
@@ -412,6 +417,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         MiniGameHitButton.Disabled = false;
         PerformButton.Disabled = true;
         _timingRing.Reset();
+        _timingBar.Position = 0f;
     }
 
     private void ResolveMiniGame(bool forceMiss = false)
@@ -437,10 +443,13 @@ public sealed partial class CombatPanelWindow : FancyWindow
         MiniGameContainer.Visible = false;
         MiniGameHitButton.Disabled = true;
         PerformButton.Disabled = false;
-        if (quality != "мимо" && quality != "неудачно")
-            TryRequestEmote(message);
-        else
-            MiniGameStatusLabel.Text = "ПРОМАХ — ДЕЙСТВИЕ НЕ ЗАСЧИТАНО";
+        MiniGameStatusLabel.Text = quality switch
+        {
+            "идеально" => "PERFECT // ИДЕАЛЬНО",
+            "удачно" or "точно" => "GOOD // УСПЕШНО",
+            _ => "MISS // ПРОМАХ",
+        };
+        TryRequestEmote(message);
         UpdateTurnControls();
         UpdateSelection();
     }
@@ -509,5 +518,26 @@ internal sealed class TimingRingControl : Control
             handle.DrawLine(previous, next, color);
             previous = next;
         }
+    }
+}
+
+/// <summary>Undertale-style moving marker timing bar with a fixed green hit window.</summary>
+internal sealed class TimingBarControl : Control
+{
+    public float Position { get; set; }
+
+    protected internal override void Draw(DrawingHandleScreen handle)
+    {
+        base.Draw(handle);
+        var size = PixelSizeBox.Size;
+        var y = size.Y / 2f;
+        var left = size.X * 0.04f;
+        var width = size.X * 0.92f;
+        var height = MathF.Max(8f, size.Y * 0.25f);
+        handle.DrawRect(UIBox2.FromDimensions(new Vector2(left, y - height / 2f), new Vector2(width, height)), new Color(65, 65, 62));
+        handle.DrawRect(UIBox2.FromDimensions(new Vector2(left + width * 0.43f, y - height / 2f), new Vector2(width * 0.14f, height)), new Color(70, 132, 105));
+        var markerX = left + width * Position;
+        handle.DrawLine(new Vector2(markerX, y - height), new Vector2(markerX, y + height), new Color(238, 238, 220));
+        handle.DrawCircle(new Vector2(markerX, y), 5f, new Color(238, 238, 220));
     }
 }
