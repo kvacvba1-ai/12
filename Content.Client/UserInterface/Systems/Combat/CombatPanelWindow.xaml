@@ -9,19 +9,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     MinSize="620 660">
     <BoxContainer Orientation="Vertical" SeparationOverride="5" Margin="5" HorizontalExpand="True">
         <PanelContainer Name="HeaderFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
-            <GridContainer Columns="2" Margin="9" HorizontalExpand="True">
-                <BoxContainer Orientation="Vertical" SeparationOverride="2" HorizontalExpand="True">
-                    <Label Text="БОЕВОЙ ТЕРМИНАЛ // TRENCHFACE" StyleClasses="LabelHeading" />
-                    <Label Text="БОЕВОЙ РЕЖИМ // ТОЛЬКО ДЛЯ ПЕРСОНАЛА" StyleClasses="LabelSmall" />
-                    <Label Name="TargetNameLabel" Text="ЦЕЛЬ // НЕИЗВЕСТНО" StyleClasses="LabelBig" />
-                    <Label Name="EngagementInfoLabel" Text="НЕТ АКТИВНОГО СТОЛКНОВЕНИЯ" />
-                </BoxContainer>
-                <BoxContainer Orientation="Vertical" SeparationOverride="2" HorizontalExpand="True">
-                    <Label Text="СНАРЯЖЕНИЕ" StyleClasses="LabelHeading" />
-                    <Label Name="WeaponInfoLabel" Text="РУКИ // ПУСТО" />
-                    <Label Text="СТАТУС // АКТИВЕН" StyleClasses="LabelHeading" />
-                </BoxContainer>
-            </GridContainer>
+            <BoxContainer Orientation="Vertical" SeparationOverride="4" Margin="9" HorizontalExpand="True">
+                <Label Text="БОЕВОЙ ТЕРМИНАЛ // TRENCHFACE" StyleClasses="LabelHeading" />
+                <Label Text="БОЕВОЙ РЕЖИМ // ТОЛЬКО ДЛЯ ПЕРСОНАЛА" StyleClasses="LabelSmall" />
+                <Label Name="TargetNameLabel" Text="ЦЕЛЬ // НЕИЗВЕСТНО" StyleClasses="LabelBig" />
+                <Label Name="EngagementInfoLabel" Text="НЕТ АКТИВНОГО СТОЛКНОВЕНИЯ" />
+                <PanelContainer StyleClasses="LowDivider" />
+                <Label Text="СНАРЯЖЕНИЕ // СТАТУС" StyleClasses="LabelHeading" />
+                <Label Name="WeaponInfoLabel" Text="РУКИ // ПУСТО" />
+                <Label Text="БОЕВОЙ МОДУЛЬ // АКТИВЕН" StyleClasses="LabelSmall" />
+            </BoxContainer>
         </PanelContainer>
 
         <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True">
