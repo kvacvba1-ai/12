@@ -61,7 +61,8 @@ public sealed partial class CombatPanelWindow : FancyWindow
     /// </summary>
     public void SetTarget(EntityUid target, string targetName, bool incoming = false)
     {
-        var sameEncounter = _target == target && _isIncoming == incoming;
+        // The same opponent is the same encounter, regardless of who opened the panel.
+        var sameEncounter = _target == target;
 
         _target = target;
         _targetName = targetName;
@@ -199,6 +200,13 @@ public sealed partial class CombatPanelWindow : FancyWindow
         return true;
     }
 
+    public void SetRemainingActions(int actions)
+    {
+        _remainingActions = Math.Clamp(actions, 0, MaxActionsPerTurn);
+        UpdateTurnControls();
+        UpdateSelection();
+    }
+
     public void ConsumeTurn()
     {
         if (_remainingActions <= 0)
@@ -211,9 +219,9 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     private void UpdateTurnControls()
     {
-        TurnCountLabel.Text = $"Действий осталось: {_remainingActions}/{MaxActionsPerTurn}";
+        TurnCountLabel.Text = $"ОСТАЛОСЬ ДЕЙСТВИЙ: {_remainingActions}/{MaxActionsPerTurn}";
         TurnStateLabel.Text = _remainingActions <= 0
-            ? "Ожидание ответа соперника"
+            ? "Ожидание двух действий соперника"
             : "Можно действовать";
 
         ShootButton.Disabled = _remainingActions <= 0;

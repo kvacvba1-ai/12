@@ -170,6 +170,8 @@ public sealed partial class ChatUIController : UIController
     private EntityUid? _healthDollEntity;
     private Dictionary<TargetBodyPart, WoundableSeverity>? _lastBodyStatus;
     private static readonly EntProtoId HealthDollPrototype = "AlertSpriteView";
+    // Counts consecutive combat actions received from each opponent. Two actions complete their turn.
+    private readonly Dictionary<EntityUid, (int Count, TimeSpan LastReceived)> _incomingCombatActions = new();
 
     public bool CombatPanelModeEnabled => _combatPanelModeEnabled;
 
@@ -480,6 +482,8 @@ public sealed partial class ChatUIController : UIController
 
     private void OnAttachedChanged(EntityUid uid)
     {
+        // A newly attached character must not inherit a previous character's partial turn.
+        _incomingCombatActions.Clear();
         UpdateChannelPermissions();
 
         UpdateAutoFillHighlights();
@@ -1077,15 +1081,35 @@ public sealed partial class ChatUIController : UIController
 
         var localName = Identity.Name(localPlayer, _ent);
         var targetPrefix = $"пытается атаковать «{localName}»:";
-        if (!message.Message.StartsWith(targetPrefix, StringComparison.CurrentCultureIgnoreCase))
+        var engagementMarker = $"в рамках столкновения с «{localName}»";
+        if (!message.Message.StartsWith(targetPrefix, StringComparison.CurrentCultureIgnoreCase)
+            && !message.Message.Contains(engagementMarker, StringComparison.CurrentCultureIgnoreCase))
             return;
 
         var attacker = _ent.GetEntity(message.SenderEntity);
         if (!_ent.EntityExists(attacker) || !_ent.HasComponent<MobStateComponent>(attacker))
             return;
 
-        // The emote is delivered through normal local chat, so no custom server channel is needed.
-        OpenCombatPanel(attacker, incoming: true);
+        // A turn is completed only after two distinct incoming combat emotes.
+        // Opening/reopening the window is presentation only and never grants actions.
+        var previous = _incomingCombatActions.GetValueOrDefault(attacker);
+        var receivedActions = previous.Count;
+        if (receivedActions > 0 && _timing.CurTime - previous.LastReceived > TimeSpan.FromMinutes(10))
+            receivedActions = 0;
+
+        receivedActions++;
+        if (receivedActions >= 2)
+        {
+            _incomingCombatActions.Remove(attacker);
+            OpenCombatPanel(attacker, incoming: true);
+            _combatPanelWindow?.SetRemainingActions(2);
+        }
+        else
+        {
+            _incomingCombatActions[attacker] = (receivedActions, _timing.CurTime);
+            OpenCombatPanel(attacker, incoming: true);
+            _combatPanelWindow?.SetRemainingActions(0);
+        }
     }
 
     public void OpenCombatPanel(EntityUid target, bool incoming = false)
@@ -1102,8 +1126,8 @@ public sealed partial class ChatUIController : UIController
         }
 
         var targetName = Identity.Name(target, _ent);
-        var sameEncounter = _combatPanelWindow.Target == target
-            && _combatPanelWindow.IsIncoming == incoming;
+        // Direction is not encounter identity: right-clicking the same opponent must not reset turns.
+        var sameEncounter = _combatPanelWindow.Target == target;
 
         _combatPanelWindow.SetTarget(target, targetName, incoming);
         UpdateCombatPanelActions();
@@ -1237,6 +1261,7 @@ public sealed partial class ChatUIController : UIController
         }
 
         var items = new List<(string Name, Action Use)>();
+        var opponentName = Identity.Name(target, _ent);
         var pendingStorage = new Queue<EntityUid>();
         var visited = new HashSet<EntityUid>();
         var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
@@ -1281,7 +1306,7 @@ public sealed partial class ChatUIController : UIController
                         return;
 
                     _combatPanelWindow?.TryRequestEmote(
-                        $"пытается оказать себе медицинскую помощь с помощью «{capturedName}»");
+                        $"пытается оказать себе медицинскую помощь с помощью «{capturedName}» в рамках столкновения с «{opponentName}»");
                 }));
             }
 
@@ -1343,6 +1368,7 @@ public sealed partial class ChatUIController : UIController
 
         var heldGun = _ent.System<HandsSystem>().GetActiveHandEntity();
         var canReload = heldGun is { } gun && _ent.HasComponent<GunComponent>(gun);
+        var opponentName = Identity.Name(_combatPanelWindow.Target ?? user, _ent);
         var items = new List<(string Name, string Details, bool IsAvailable, Action Use)>();
         var pendingStorage = new Queue<EntityUid>();
         var visited = new HashSet<EntityUid>();
@@ -1414,11 +1440,11 @@ public sealed partial class ChatUIController : UIController
 
                         var gunName = Identity.Name(targetGun, _ent);
                         _combatPanelWindow?.TryRequestEmote(
-                            $"перезаряжает «{gunName}» с помощью «{itemName}»");
+                            $"перезаряжает «{gunName}» с помощью «{itemName}» в рамках столкновения с «{opponentName}»");
                     }
                     else if (isThrowable)
                     {
-                        _combatPanelWindow?.TryRequestEmote($"готовит к применению «{itemName}»");
+                        _combatPanelWindow?.TryRequestEmote($"готовит к применению «{itemName}» в рамках столкновения с «{opponentName}»");
                     }
                 }));
             }
