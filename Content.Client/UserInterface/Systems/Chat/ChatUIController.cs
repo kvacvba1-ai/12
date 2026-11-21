@@ -662,14 +662,15 @@ public sealed partial class ChatUIController : UIController
     {
         UpdateQueuedSpeechBubbles(delta);
 
-        if (_combatPanelWindow is not { IsOpen: true, Target: { } target })
+        var combatPanelWindow = _combatPanelWindow;
+        if (combatPanelWindow is not { IsOpen: true, Target: { } target })
             return;
 
         if (!_ent.EntityExists(target)
             || _player.LocalEntity is not { } localPlayer
             || !_ent.EntityExists(localPlayer))
         {
-            _combatPanelWindow.Close();
+            combatPanelWindow.Close();
             return;
         }
 
