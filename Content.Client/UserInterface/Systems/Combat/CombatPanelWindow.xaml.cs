@@ -81,6 +81,18 @@ public sealed partial class CombatPanelWindow : FancyWindow
         StatusTab.PanelOverride = insetFrame;
         EquipmentTab.PanelOverride = insetFrame;
 
+        var copperTint = new Color(222, 187, 153);
+        foreach (var button in new[]
+        {
+            ShootButton, StabButton, PunchButton, KickButton,
+            HeadButton, ChestButton, LeftArmButton, RightArmButton,
+            LeftLegButton, RightLegButton, PerformButton, MiniGameHitButton,
+            AmmunitionToggleButton,
+        })
+        {
+            button.ModulateSelfOverride = copperTint;
+        }
+
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
         TabContainer.SetTabTitle(EquipmentTab, "Снаряжение");
@@ -210,7 +222,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         {
             var button = new Button
             {
-                Text = $"{name} — {details}",
+                Text = $"{name} - {details}",
                 HorizontalExpand = true,
                 Disabled = _remainingActions <= 0 || !isAvailable,
             };
@@ -399,7 +411,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             ? "Выберите действие"
             : _selectedPart == null
                 ? "Теперь выберите часть тела"
-                : $"{GetActionLabel(_selectedAction)} → {GetPartLabel(_selectedPart)}";
+                : $"{GetActionLabel(_selectedAction)} - {GetPartLabel(_selectedPart)}";
     }
 
     private static string GetActionLabel(string action)
@@ -524,7 +536,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             ? $"{_pendingAttackMessage} (попаданий: {_ringSuccesses}/{_weaponShots}; {quality})"
             : $"{_pendingAttackMessage} (результат мини-игры: {quality})";
 
-        if (!_ringMiniGame && !forceMiss && quality is "идеально" or "удачно")
+        if (!_ringMiniGame && !forceMiss && (quality is "идеально" or "удачно"))
             AttackSoundRequested?.Invoke(false);
         _miniGameActive = false;
         _miniGameResolved = true;
@@ -548,14 +560,14 @@ public sealed partial class CombatPanelWindow : FancyWindow
             return;
 
         var part = GetPartLabel(_selectedPart);
-        var weapon = string.IsNullOrWhiteSpace(_weaponName) ? "оружия ближнего боя" : $"«{_weaponName}»";
+        var weapon = string.IsNullOrWhiteSpace(_weaponName) ? "оружия ближнего боя" : $""{_weaponName}"";
 
         var message = _selectedAction switch
         {
-            "shoots" => $"пытается атаковать «{_targetName}»: стреляет в область «{part}» из {weapon}",
-            "stabs" => $"пытается атаковать «{_targetName}»: наносит удар оружием {weapon} в область «{part}»",
-            "punches" => $"пытается атаковать «{_targetName}»: бьёт кулаком в область «{part}»",
-            "kicks" => $"пытается атаковать «{_targetName}»: наносит удар ногой в область «{part}»",
+            "shoots" => $"пытается атаковать "{_targetName}": стреляет в область "{part}" из {weapon}",
+            "stabs" => $"пытается атаковать "{_targetName}": наносит удар оружием {weapon} в область "{part}"",
+            "punches" => $"пытается атаковать "{_targetName}": бьёт кулаком в область "{part}"",
+            "kicks" => $"пытается атаковать "{_targetName}": наносит удар ногой в область "{part}"",
             _ => null,
         };
 
