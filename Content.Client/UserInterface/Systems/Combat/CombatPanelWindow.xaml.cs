@@ -16,6 +16,7 @@ namespace Content.Client.UserInterface.Systems.Combat;
 public sealed partial class CombatPanelWindow : FancyWindow
 {
     private const int MaxActionsPerTurn = 2;
+    private const int TargetSectorCount = 2;
 
     private string? _selectedAction;
     private string? _selectedPart;
@@ -53,20 +54,29 @@ public sealed partial class CombatPanelWindow : FancyWindow
         MiniGameVisualContainer.AddChild(_timingBar);
         _timingRing.Visible = false;
         _timingBar.Visible = false;
-        var terminalFrame = new StyleBoxFlat
+        var steelFrame = new StyleBoxFlat
         {
-            BackgroundColor = new Color(24, 25, 23),
-            BorderColor = new Color(145, 62, 48),
+            BackgroundColor = new Color(25, 23, 21),
+            BorderColor = new Color(126, 75, 49),
             BorderThickness = new Thickness(2),
         };
         var insetFrame = new StyleBoxFlat
         {
-            BackgroundColor = new Color(17, 19, 19),
-            BorderColor = new Color(91, 83, 68),
+            BackgroundColor = new Color(16, 17, 17),
+            BorderColor = new Color(91, 65, 51),
             BorderThickness = new Thickness(1),
         };
-        HeaderFrame.PanelOverride = terminalFrame;
-        MiniGameContainer.PanelOverride = terminalFrame;
+        var bloodFrame = new StyleBoxFlat
+        {
+            BackgroundColor = new Color(31, 17, 17),
+            BorderColor = new Color(151, 48, 43),
+            BorderThickness = new Thickness(2),
+        };
+        HeaderFrame.PanelOverride = steelFrame;
+        ActionFrame.PanelOverride = insetFrame;
+        TargetZoneFrame.PanelOverride = bloodFrame;
+        MiniGameContainer.PanelOverride = bloodFrame;
+        TurnFrame.PanelOverride = steelFrame;
         CombatTab.PanelOverride = insetFrame;
         StatusTab.PanelOverride = insetFrame;
         EquipmentTab.PanelOverride = insetFrame;
@@ -140,7 +150,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
             _miniGameResolved = false;
             _pendingAttackMessage = null;
             MiniGameContainer.Visible = false;
-            BodyPartSelectionContainer.Visible = false;
+            TargetZoneFrame.Visible = false;
         }
 
         UpdatePartButtonHighlights();
@@ -316,7 +326,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         _selectedAction = action;
         _selectedPart = null;
-        BodyPartSelectionContainer.Visible = true;
+        TargetZoneFrame.Visible = true;
         UpdatePartButtonHighlights();
         UpdateActionButtonHighlights();
         UpdateSelection();
@@ -456,13 +466,13 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _timingRing.Visible = radial;
         MiniGameTitleLabel.Text = radial ? "БАЛЛИСТИЧЕСКИЙ КОНТРОЛЬ" : "КОНТРОЛЬ УДАРА";
         MiniGameHintLabel.Text = radial
-            ? $"ПОПАДАНИЯ: {_weaponShots}. Нажимайте в красных секторах по очереди"
+            ? $"ПОПЫТКИ: {_weaponShots}. Попадайте в один из двух красных секторов"
             : "Зафиксируйте удар, когда ползунок окажется в зелёной зоне";
         MiniGameHitButton.Text = "ЗАФИКСИРОВАТЬ";
         MiniGameStatusLabel.Text = "ОЖИДАНИЕ МОМЕНТА...";
         MiniGameHitButton.Disabled = false;
         PerformButton.Disabled = true;
-        _timingRing.Configure(_weaponShots);
+        _timingRing.Configure();
         _timingRing.Reset();
         _timingBar.MarkerPosition = 0f;
     }
@@ -473,7 +483,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
             return;
 
         if (_timingRing.IsInTargetSector)
+        {
             _ringSuccesses++;
+            AttackSoundRequested?.Invoke(true);
+        }
 
         _ringCompleted++;
         if (_ringCompleted >= _weaponShots)
@@ -484,7 +497,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         _timingRing.AdvanceTarget();
         MiniGameHitButton.Text = $"ПОПАДАНИЕ {_ringCompleted + 1}/{_weaponShots}";
-        MiniGameStatusLabel.Text = $"СЛЕДУЮЩИЙ СЕКТОР // {_ringCompleted + 1} ИЗ {_weaponShots}";
+        MiniGameStatusLabel.Text = $"СЛЕДУЮЩАЯ ПОПЫТКА // {_ringCompleted + 1} ИЗ {_weaponShots}";
     }
 
     private void ResolveMiniGame(bool forceMiss = false)
@@ -507,14 +520,16 @@ public sealed partial class CombatPanelWindow : FancyWindow
             }
         }
 
-        var resultDetails = _ringMiniGame
-            ? $"попаданий: {_ringSuccesses}/{_weaponShots}"
-            : $"результат мини-игры: {quality}";
-        var message = $"{_pendingAttackMessage} ({resultDetails}; {quality})";
+        var message = _ringMiniGame
+            ? $"{_pendingAttackMessage} (попаданий: {_ringSuccesses}/{_weaponShots}; {quality})"
+            : $"{_pendingAttackMessage} (результат мини-игры: {quality})";
+
+        if (!_ringMiniGame && !forceMiss && quality is "идеально" or "удачно")
+            AttackSoundRequested?.Invoke(false);
         _miniGameActive = false;
         _miniGameResolved = true;
         _pendingAttackMessage = null;
-        MiniGameHitButton.Text = "CONTINUE >>";
+        MiniGameHitButton.Text = "ПРОДОЛЖИТЬ";
         MiniGameHitButton.Disabled = false;
         MiniGameStatusLabel.Text = quality switch
         {
@@ -549,7 +564,6 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         if (_selectedAction is "shoots" or "stabs")
         {
-            AttackSoundRequested?.Invoke(_selectedAction == "shoots");
             BeginMiniGame(message, radial: _selectedAction == "shoots");
         }
         else
@@ -561,7 +575,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 internal sealed class TimingRingControl : Control
 {
     private float _angle;
-    private int _targetCount = 1;
+    private int _targetCount = TargetSectorCount;
     private int _targetIndex;
     private const float RotationSpeed = MathF.PI * 1.35f;
     private const float SectorHalfWidth = 0.19f;
@@ -576,7 +590,7 @@ internal sealed class TimingRingControl : Control
         }
     }
 
-    public void Configure(int targetCount) => _targetCount = Math.Clamp(targetCount, 1, 6);
+    public void Configure() => _targetCount = TargetSectorCount;
     public void AdvanceTarget() => _targetIndex = (_targetIndex + 1) % _targetCount;
     public void Reset()
     {
