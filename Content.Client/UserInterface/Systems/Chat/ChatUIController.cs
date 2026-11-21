@@ -164,6 +164,7 @@ public sealed partial class ChatUIController : UIController
 
     private readonly HashSet<ChatBox> _chats = new();
     private CombatPanelWindow? _combatPanelWindow;
+    private Robust.Shared.Audio.IPlayingAudioStream? _combatPanelMusic;
     private bool _combatPanelModeEnabled;
     private TimeSpan _combatPanelRefreshTimer;
     private TimeSpan _medicalRefreshTimer;
@@ -1153,10 +1154,21 @@ public sealed partial class ChatUIController : UIController
 
         if (!_combatPanelWindow.IsOpen)
             _combatPanelWindow.Open();
+
+        if (_player.LocalEntity is { } musicRecipient && _combatPanelMusic == null)
+        {
+            _combatPanelMusic = _ent.System<AudioSystem>().PlayGlobal(
+                "/Audio/Misc/YyYO8Si3WVA5QBwC4KaR1QQTDNvJDOE.ogg",
+                musicRecipient,
+                Robust.Shared.Audio.AudioParams.Default.WithLoop(true).WithVolume(-12f));
+        }
     }
 
     private void OnCombatPanelClosed()
     {
+        _combatPanelMusic?.Stop();
+        _combatPanelMusic = null;
+
         if (_healthDollEntity is { } doll && _ent.EntityExists(doll))
             _ent.QueueDeleteEntity(doll);
 
