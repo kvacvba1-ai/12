@@ -14,11 +14,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <Label Text="БОЕВОЙ ТЕРМИНАЛ // TRENCHFACE" StyleClasses="LabelHeading" />
                     <Label Text="БОЕВОЙ РЕЖИМ // ТОЛЬКО ДЛЯ ПЕРСОНАЛА" StyleClasses="LabelSmall" />
                     <Label Name="TargetNameLabel" Text="ЦЕЛЬ // НЕИЗВЕСТНО" StyleClasses="LabelBig" />
-                    <Label Name="EngagementInfoLabel" Text="NO ACTIVE ENGAGEMENT" />
+                    <Label Name="EngagementInfoLabel" Text="НЕТ АКТИВНОГО СТОЛКНОВЕНИЯ" />
                 </BoxContainer>
                 <BoxContainer Orientation="Vertical" SeparationOverride="2" HorizontalExpand="True">
                     <Label Text="СНАРЯЖЕНИЕ" StyleClasses="LabelHeading" />
-                    <Label Name="WeaponInfoLabel" Text="HANDS // EMPTY" />
+                    <Label Name="WeaponInfoLabel" Text="РУКИ // ПУСТО" />
                     <Label Text="СТАТУС // АКТИВЕН" StyleClasses="LabelHeading" />
                 </BoxContainer>
             </GridContainer>
@@ -28,7 +28,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
-                        <Label Text="ACTION SELECT // ВЫБОР ДЕЙСТВИЯ" StyleClasses="LabelHeading" />
+                        <Label Text="ВЫБОР БОЕВОГО ДЕЙСТВИЯ" StyleClasses="LabelHeading" />
                         <PanelContainer Name="ActionFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
                             <GridContainer Columns="2" Margin="6" HorizontalExpand="True">
                                 <Button Name="ShootButton" Text="[01] ОГНЕСТРЕЛЬНОЕ ОРУЖИЕ" />
@@ -53,7 +53,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                             </BoxContainer>
                         </PanelContainer>
                         <Label Name="SelectionLabel" Text="ВЫБЕРИТЕ ДЕЙСТВИЕ И ЗОНУ" StyleClasses="LabelHeading" />
-                        <Button Name="PerformButton" Text="CONFIRM ACTION  >>" Disabled="True" />
+                        <Button Name="PerformButton" Text="ПОДТВЕРДИТЬ ДЕЙСТВИЕ" Disabled="True" />
                     </BoxContainer>
                 </ScrollContainer>
             </PanelContainer>
@@ -61,7 +61,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             <PanelContainer Name="StatusTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
-                        <Label Text="TARGET DIAGNOSTICS // СОСТОЯНИЕ ЦЕЛИ" StyleClasses="LabelHeading" />
+                        <Label Text="ДИАГНОСТИКА ЦЕЛИ" StyleClasses="LabelHeading" />
                         <BoxContainer Orientation="Horizontal" SeparationOverride="10" HorizontalExpand="True">
                             <SpriteView Name="HealthDollView" SetSize="112 168" Visible="False" />
                             <Label Name="HealthAnalyzerLabel" Text="НЕТ ДАННЫХ О СОСТОЯНИИ" HorizontalExpand="True" />
@@ -76,7 +76,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         <Label Text="МЕДИЦИНСКОЕ СНАРЯЖЕНИЕ" StyleClasses="LabelHeading" />
                         <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
                         <PanelContainer StyleClasses="LowDivider" />
-                        <Label Text="AMMUNITION AND CONSUMABLES" StyleClasses="LabelHeading" />
+                        <Label Text="БОЕПРИПАСЫ И РАСХОДНИКИ" StyleClasses="LabelHeading" />
                         <Button Name="AmmunitionToggleButton" Text="ПОКАЗАТЬ СНАРЯЖЕНИЕ" />
                         <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
                     </BoxContainer>
