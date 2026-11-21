@@ -1122,6 +1122,16 @@ public sealed partial class ChatUIController : UIController
             _combatPanelWindow = UIManager.CreateWindow<CombatPanelWindow>();
             _combatPanelWindow.EmoteRequested += message =>
                 _manager.SendMessage(message, ChatSelectChannel.Emotes);
+            _combatPanelWindow.AttackSoundRequested += firearm =>
+            {
+                if (_player.LocalEntity is not { } localPlayer)
+                    return;
+
+                var sound = firearm
+                    ? "/Audio/Weapons/Guns/Gunshots/shotgun.ogg"
+                    : "/Audio/Weapons/bladeslice.ogg";
+                _ent.System<AudioSystem>().PlayGlobal(sound, localPlayer);
+            };
             _combatPanelWindow.OnClose += OnCombatPanelClosed;
         }
 
