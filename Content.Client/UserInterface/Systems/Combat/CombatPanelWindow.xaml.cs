@@ -554,7 +554,7 @@ internal sealed class TimingBarControl : Control
 {
     public float MarkerPosition { get; set; }
 
-    protected internal override void Draw(DrawingHandleScreen handle)
+    protected override void Draw(DrawingHandleScreen handle)
     {
         base.Draw(handle);
         var size = PixelSizeBox.Size;
@@ -564,7 +564,7 @@ internal sealed class TimingBarControl : Control
         var height = MathF.Max(8f, size.Y * 0.25f);
         handle.DrawRect(UIBox2.FromDimensions(new Vector2(left, y - height / 2f), new Vector2(width, height)), new Color(65, 65, 62));
         handle.DrawRect(UIBox2.FromDimensions(new Vector2(left + width * 0.43f, y - height / 2f), new Vector2(width * 0.14f, height)), new Color(70, 132, 105));
-        var markerX = left + width * Position;
+        var markerX = left + width * MarkerPosition;
         handle.DrawLine(new Vector2(markerX, y - height), new Vector2(markerX, y + height), new Color(238, 238, 220));
         handle.DrawCircle(new Vector2(markerX, y), 5f, new Color(238, 238, 220));
     }
