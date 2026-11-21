@@ -2,7 +2,7 @@
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-<Control xmlns="https://spacestation14.io">
+<BaseWindow xmlns="https://spacestation14.io">
     <BoxContainer Orientation="Vertical" SeparationOverride="0" HorizontalExpand="True">
         <PanelContainer Name="WindowHeader" HorizontalExpand="True">
             <BoxContainer Orientation="Horizontal" SeparationOverride="6" Margin="10 7" HorizontalExpand="True">
@@ -114,4 +114,4 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         </PanelContainer>
         </BoxContainer>
     </BoxContainer>
-</Control>
+</BaseWindow>
