@@ -212,22 +212,22 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private void UpdateTurnControls()
     {
         TurnCountLabel.Text = $"Действий осталось: {_remainingActions}/{MaxActionsPerTurn}";
-        TurnStateLabel.Text = _remainingActions == 0
+        TurnStateLabel.Text = _remainingActions <= 0
             ? "Ожидание ответа соперника"
             : "Можно действовать";
 
-        ShootButton.Disabled = _remainingActions == 0;
-        StabButton.Disabled = _remainingActions == 0;
-        PunchButton.Disabled = _remainingActions == 0;
-        KickButton.Disabled = _remainingActions == 0;
-        PerformButton.Disabled = _remainingActions == 0
+        ShootButton.Disabled = _remainingActions <= 0;
+        StabButton.Disabled = _remainingActions <= 0;
+        PunchButton.Disabled = _remainingActions <= 0;
+        KickButton.Disabled = _remainingActions <= 0;
+        PerformButton.Disabled = _remainingActions <= 0
             || _selectedAction == null
             || _selectedPart == null;
 
         foreach (var child in MedicalItemsContainer.Children)
         {
             if (child is Button button)
-                button.Disabled = _remainingActions == 0;
+                button.Disabled = _remainingActions <= 0;
         }
 
         foreach (var child in AmmunitionContainer.Children)
