@@ -2,7 +2,8 @@
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-<CombatPanelWindow xmlns="https://spacestation14.io">
+<combat:CombatPanelWindow xmlns="https://spacestation14.io"
+                          xmlns:combat="clr-namespace:Content.Client.UserInterface.Systems.Combat">
     <PanelContainer Name="WindowFrame" HorizontalExpand="True" VerticalExpand="True">
         <BoxContainer Orientation="Vertical" SeparationOverride="0" HorizontalExpand="True">
         <PanelContainer Name="WindowHeader" HorizontalExpand="True">
@@ -116,4 +117,4 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         </BoxContainer>
     </BoxContainer>
     </PanelContainer>
-</CombatPanelWindow>
+</combat:CombatPanelWindow>
