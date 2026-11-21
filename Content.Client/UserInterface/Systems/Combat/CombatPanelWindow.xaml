@@ -2,10 +2,19 @@
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-<Window
-    xmlns="https://spacestation14.io"
-    Title="БОЕВОЙ ТЕРМИНАЛ // TRENCHFACE"
-    MinSize="620 660">
+<Control xmlns="https://spacestation14.io">
+    <BoxContainer Orientation="Vertical" SeparationOverride="0" HorizontalExpand="True">
+        <PanelContainer Name="WindowHeader" HorizontalExpand="True">
+            <BoxContainer Orientation="Horizontal" SeparationOverride="6" Margin="10 7" HorizontalExpand="True">
+                <BoxContainer Orientation="Vertical" SeparationOverride="1" HorizontalExpand="True">
+                    <Label Text="TRENCHFACE // COMBAT SYSTEM" StyleClasses="LabelHeading" />
+                    <Label Text="TACTICAL INTERFACE  •  SECURE CHANNEL" StyleClasses="LabelSmall" />
+                </BoxContainer>
+                <Label Text="● ONLINE" StyleClasses="LabelSmall" />
+                <Button Name="CloseWindowButton" Text="✕" MinSize="34 28" />
+            </BoxContainer>
+        </PanelContainer>
+        <BoxContainer Name="WindowBody" Orientation="Vertical" SeparationOverride="5" Margin="5" HorizontalExpand="True">
     <BoxContainer Orientation="Vertical" SeparationOverride="5" Margin="5" HorizontalExpand="True">
         <PanelContainer Name="HeaderFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
             <BoxContainer Orientation="Vertical" SeparationOverride="4" Margin="9" HorizontalExpand="True">
@@ -103,5 +112,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 </BoxContainer>
             </GridContainer>
         </PanelContainer>
+        </BoxContainer>
     </BoxContainer>
-</Window>
+</Control>
