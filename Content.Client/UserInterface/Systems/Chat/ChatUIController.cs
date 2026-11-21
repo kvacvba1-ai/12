@@ -1162,7 +1162,11 @@ public sealed partial class ChatUIController : UIController
                 "/Audio/Misc/YyYO8Si3WVA5QBwC4KaR1QQTDNvJDOE.ogg",
                 musicRecipient,
                 Robust.Shared.Audio.AudioParams.Default.WithLoop(true).WithVolume(-12f));
-            _stopCombatPanelMusic = music.Stop;
+            if (music is { } playingMusic)
+            {
+                _stopCombatPanelMusic = () =>
+                    _ent.System<AudioSystem>().Stop(playingMusic.Entity, playingMusic.Component);
+            }
         }
     }
 
