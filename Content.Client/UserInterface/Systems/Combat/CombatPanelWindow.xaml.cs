@@ -16,7 +16,6 @@ namespace Content.Client.UserInterface.Systems.Combat;
 public sealed partial class CombatPanelWindow : FancyWindow
 {
     private const int MaxActionsPerTurn = 2;
-    private const int TargetSectorCount = 2;
 
     private string? _selectedAction;
     private string? _selectedPart;
@@ -588,6 +587,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
 /// <summary>Draws the rotating timing needle and two target sectors for firearm timing.</summary>
 internal sealed class TimingRingControl : Control
 {
+    private const int TargetSectorCount = 2;
     private float _angle;
     private int _targetCount = TargetSectorCount;
     private int _targetIndex;
