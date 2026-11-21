@@ -1239,8 +1239,6 @@ public sealed partial class ChatUIController : UIController
             ? damageable.TotalDamage.ToString()
             : "Нет данных";
 
-        _combatPanelWindow.SetHealthAnalyzer(status, totalDamage);
-
         if (!_ent.TryGetComponent<TargetingComponent>(target, out var targeting))
         {
             if (_healthDollEntity is { } missingTargetDoll && _ent.EntityExists(missingTargetDoll))
@@ -1248,10 +1246,18 @@ public sealed partial class ChatUIController : UIController
             _healthDollEntity = null;
             _lastBodyStatus = null;
             _combatPanelWindow.SetHealthDoll(null);
+            _combatPanelWindow.SetHealthAnalyzer(status, totalDamage, "Данные о повреждениях по частям тела недоступны.");
             return;
         }
 
         var bodyStatus = targeting.BodyStatus;
+        var bodyDetails = bodyStatus.Count == 0
+            ? "Нет зарегистрированных данных по частям тела."
+            : string.Join("\n", bodyStatus
+                .OrderBy(pair => pair.Key)
+                .Select(pair => $"{GetCombatBodyPartName(pair.Key)}: {pair.Value}"));
+        _combatPanelWindow.SetHealthAnalyzer(status, totalDamage, bodyDetails);
+
         if (_lastBodyStatus != null && _lastBodyStatus.SequenceEqual(bodyStatus))
             return;
 
@@ -1283,6 +1289,22 @@ public sealed partial class ChatUIController : UIController
         }
 
         _combatPanelWindow.SetHealthDoll(_healthDollEntity);
+    }
+
+    private static string GetCombatBodyPartName(TargetBodyPart part)
+    {
+        return part.ToString() switch
+        {
+            "Head" => "Голова",
+            "Chest" => "Грудь",
+            "LeftArm" => "Левая рука",
+            "RightArm" => "Правая рука",
+            "LeftLeg" => "Левая нога",
+            "RightLeg" => "Правая нога",
+            "LeftFoot" => "Левая стопа",
+            "RightFoot" => "Правая стопа",
+            _ => part.ToString(),
+        };
     }
 
     private void UpdateCombatPanelMedicalItems(EntityUid target)
