@@ -54,15 +54,21 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _timingBar.Visible = false;
         var terminalFrame = new StyleBoxFlat
         {
-            BackgroundColor = Color.Black,
-            BorderColor = new Color(190, 190, 180),
+            BackgroundColor = new Color(24, 25, 23),
+            BorderColor = new Color(145, 62, 48),
             BorderThickness = new Thickness(2),
+        };
+        var insetFrame = new StyleBoxFlat
+        {
+            BackgroundColor = new Color(17, 19, 19),
+            BorderColor = new Color(91, 83, 68),
+            BorderThickness = new Thickness(1),
         };
         HeaderFrame.PanelOverride = terminalFrame;
         MiniGameContainer.PanelOverride = terminalFrame;
-        CombatTab.PanelOverride = terminalFrame;
-        StatusTab.PanelOverride = terminalFrame;
-        EquipmentTab.PanelOverride = terminalFrame;
+        CombatTab.PanelOverride = insetFrame;
+        StatusTab.PanelOverride = insetFrame;
+        EquipmentTab.PanelOverride = insetFrame;
 
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
