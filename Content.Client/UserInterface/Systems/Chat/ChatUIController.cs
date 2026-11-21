@@ -1079,7 +1079,9 @@ public sealed partial class ChatUIController : UIController
 
         var localName = Identity.Name(localPlayer, _ent);
         var targetPrefix = $"пытается атаковать «{localName}»:";
-        if (!message.Message.StartsWith(targetPrefix, StringComparison.CurrentCultureIgnoreCase))
+        var engagementMarker = $"в рамках столкновения с «{localName}»";
+        if (!message.Message.StartsWith(targetPrefix, StringComparison.CurrentCultureIgnoreCase)
+            && !message.Message.Contains(engagementMarker, StringComparison.CurrentCultureIgnoreCase))
             return;
 
         var attacker = _ent.GetEntity(message.SenderEntity);
@@ -1252,6 +1254,7 @@ public sealed partial class ChatUIController : UIController
         }
 
         var items = new List<(string Name, Action Use)>();
+        var opponentName = Identity.Name(target, _ent);
         var pendingStorage = new Queue<EntityUid>();
         var visited = new HashSet<EntityUid>();
         var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
@@ -1296,7 +1299,7 @@ public sealed partial class ChatUIController : UIController
                         return;
 
                     _combatPanelWindow?.TryRequestEmote(
-                        $"пытается оказать себе медицинскую помощь с помощью «{capturedName}»");
+                        $"пытается оказать себе медицинскую помощь с помощью «{capturedName}» в рамках столкновения с «{opponentName}»");
                 }));
             }
 
@@ -1358,6 +1361,7 @@ public sealed partial class ChatUIController : UIController
 
         var heldGun = _ent.System<HandsSystem>().GetActiveHandEntity();
         var canReload = heldGun is { } gun && _ent.HasComponent<GunComponent>(gun);
+        var opponentName = Identity.Name(_combatPanelWindow.Target ?? user, _ent);
         var items = new List<(string Name, string Details, bool IsAvailable, Action Use)>();
         var pendingStorage = new Queue<EntityUid>();
         var visited = new HashSet<EntityUid>();
@@ -1429,11 +1433,11 @@ public sealed partial class ChatUIController : UIController
 
                         var gunName = Identity.Name(targetGun, _ent);
                         _combatPanelWindow?.TryRequestEmote(
-                            $"перезаряжает «{gunName}» с помощью «{itemName}»");
+                            $"перезаряжает «{gunName}» с помощью «{itemName}» в рамках столкновения с «{opponentName}»");
                     }
                     else if (isThrowable)
                     {
-                        _combatPanelWindow?.TryRequestEmote($"готовит к применению «{itemName}»");
+                        _combatPanelWindow?.TryRequestEmote($"готовит к применению «{itemName}» в рамках столкновения с «{opponentName}»");
                     }
                 }));
             }
