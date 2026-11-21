@@ -164,6 +164,7 @@ public sealed partial class ChatUIController : UIController
 
     private readonly HashSet<ChatBox> _chats = new();
     private CombatPanelWindow? _combatPanelWindow;
+    private Robust.Shared.Audio.IPlayingAudioStream? _combatPanelMusic;
     private bool _combatPanelModeEnabled;
     private TimeSpan _combatPanelRefreshTimer;
     private TimeSpan _medicalRefreshTimer;
@@ -1122,6 +1123,16 @@ public sealed partial class ChatUIController : UIController
             _combatPanelWindow = UIManager.CreateWindow<CombatPanelWindow>();
             _combatPanelWindow.EmoteRequested += message =>
                 _manager.SendMessage(message, ChatSelectChannel.Emotes);
+            _combatPanelWindow.AttackSoundRequested += firearm =>
+            {
+                if (_player.LocalEntity is not { } localPlayer)
+                    return;
+
+                var sound = firearm
+                    ? "/Audio/Weapons/Guns/Gunshots/shotgun.ogg"
+                    : "/Audio/Weapons/bladeslice.ogg";
+                _ent.System<AudioSystem>().PlayGlobal(sound, localPlayer);
+            };
             _combatPanelWindow.OnClose += OnCombatPanelClosed;
         }
 
@@ -1143,10 +1154,21 @@ public sealed partial class ChatUIController : UIController
 
         if (!_combatPanelWindow.IsOpen)
             _combatPanelWindow.Open();
+
+        if (_player.LocalEntity is { } musicRecipient && _combatPanelMusic == null)
+        {
+            _combatPanelMusic = _ent.System<AudioSystem>().PlayGlobal(
+                "/Audio/Misc/YyYO8Si3WVA5QBwC4KaR1QQTDNvJDOE.ogg",
+                musicRecipient,
+                Robust.Shared.Audio.AudioParams.Default.WithLoop(true).WithVolume(-12f));
+        }
     }
 
     private void OnCombatPanelClosed()
     {
+        _combatPanelMusic?.Stop();
+        _combatPanelMusic = null;
+
         if (_healthDollEntity is { } doll && _ent.EntityExists(doll))
             _ent.QueueDeleteEntity(doll);
 
@@ -1169,12 +1191,19 @@ public sealed partial class ChatUIController : UIController
         if (heldItem is { } held)
         {
             var heldName = Identity.Name(held, _ent);
+            var shots = 1;
             if (_ent.TryGetComponent<BallisticAmmoProviderComponent>(held, out var ballistic))
-                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {ballistic.Count}/{ballistic.Capacity}", heldName);
+            {
+                shots = Math.Max(1, ballistic.Count);
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {ballistic.Count}/{ballistic.Capacity}", heldName, shots);
+            }
             else if (_ent.TryGetComponent<BasicEntityAmmoProviderComponent>(held, out var basic))
-                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {basic.Count ?? 0}/{basic.Capacity ?? 0}", heldName);
+            {
+                shots = Math.Max(1, basic.Count ?? 0);
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nЗаряды: {basic.Count ?? 0}/{basic.Capacity ?? 0}", heldName, shots);
+            }
             else if (hasGun)
-                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nОгнестрельное оружие", heldName);
+                _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nОгнестрельное оружие", heldName, shots);
             else if (hasMeleeWeapon)
                 _combatPanelWindow.SetWeaponInfo($"В руках: {heldName}\nОружие ближнего боя", heldName);
             else

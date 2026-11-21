@@ -34,11 +34,15 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private string? _pendingAttackMessage;
     private float _barPosition;
     private bool _barForward = true;
+    private int _weaponShots = 1;
+    private int _ringCompleted;
+    private int _ringSuccesses;
 
     public EntityUid? Target => _target;
     public bool IsIncoming => _isIncoming;
 
     public event Action<string>? EmoteRequested;
+    public event Action<bool>? AttackSoundRequested;
 
     public CombatPanelWindow()
     {
@@ -51,15 +55,21 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _timingBar.Visible = false;
         var terminalFrame = new StyleBoxFlat
         {
-            BackgroundColor = Color.Black,
-            BorderColor = new Color(190, 190, 180),
+            BackgroundColor = new Color(24, 25, 23),
+            BorderColor = new Color(145, 62, 48),
             BorderThickness = new Thickness(2),
+        };
+        var insetFrame = new StyleBoxFlat
+        {
+            BackgroundColor = new Color(17, 19, 19),
+            BorderColor = new Color(91, 83, 68),
+            BorderThickness = new Thickness(1),
         };
         HeaderFrame.PanelOverride = terminalFrame;
         MiniGameContainer.PanelOverride = terminalFrame;
-        CombatTab.PanelOverride = terminalFrame;
-        StatusTab.PanelOverride = terminalFrame;
-        EquipmentTab.PanelOverride = terminalFrame;
+        CombatTab.PanelOverride = insetFrame;
+        StatusTab.PanelOverride = insetFrame;
+        EquipmentTab.PanelOverride = insetFrame;
 
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
@@ -81,7 +91,12 @@ public sealed partial class CombatPanelWindow : FancyWindow
         MiniGameHitButton.OnPressed += _ =>
         {
             if (_miniGameActive)
-                ResolveMiniGame();
+            {
+                if (_ringMiniGame)
+                    RegisterRingHit();
+                else
+                    ResolveMiniGame();
+            }
             else if (_miniGameResolved)
             {
                 _miniGameResolved = false;
@@ -134,10 +149,11 @@ public sealed partial class CombatPanelWindow : FancyWindow
         UpdateTurnControls();
     }
 
-    public void SetWeaponInfo(string info, string? weaponName = null)
+    public void SetWeaponInfo(string info, string? weaponName = null, int shots = 1)
     {
         WeaponInfoLabel.Text = info;
         _weaponName = weaponName;
+        _weaponShots = Math.Clamp(shots, 1, 6);
     }
 
     public void SetHealthAnalyzer(string status, string damage)
@@ -432,20 +448,43 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _miniGameElapsed = 0f;
         _barPosition = 0f;
         _barForward = true;
+        _ringCompleted = 0;
+        _ringSuccesses = 0;
         MiniGameContainer.Visible = true;
         MiniGameVisualContainer.Visible = true;
         _timingBar.Visible = !radial;
         _timingRing.Visible = radial;
         MiniGameTitleLabel.Text = radial ? "БАЛЛИСТИЧЕСКИЙ КОНТРОЛЬ" : "КОНТРОЛЬ УДАРА";
         MiniGameHintLabel.Text = radial
-            ? "Нажмите, когда указатель войдёт в один из двух красных секторов"
+            ? $"ПОПАДАНИЯ: {_weaponShots}. Нажимайте в красных секторах по очереди"
             : "Зафиксируйте удар, когда ползунок окажется в зелёной зоне";
         MiniGameHitButton.Text = "ЗАФИКСИРОВАТЬ";
         MiniGameStatusLabel.Text = "ОЖИДАНИЕ МОМЕНТА...";
         MiniGameHitButton.Disabled = false;
         PerformButton.Disabled = true;
+        _timingRing.Configure(_weaponShots);
         _timingRing.Reset();
         _timingBar.MarkerPosition = 0f;
+    }
+
+    private void RegisterRingHit()
+    {
+        if (!_miniGameActive || !_ringMiniGame)
+            return;
+
+        if (_timingRing.IsInTargetSector)
+            _ringSuccesses++;
+
+        _ringCompleted++;
+        if (_ringCompleted >= _weaponShots)
+        {
+            ResolveMiniGame();
+            return;
+        }
+
+        _timingRing.AdvanceTarget();
+        MiniGameHitButton.Text = $"ПОПАДАНИЕ {_ringCompleted + 1}/{_weaponShots}";
+        MiniGameStatusLabel.Text = $"СЛЕДУЮЩИЙ СЕКТОР // {_ringCompleted + 1} ИЗ {_weaponShots}";
     }
 
     private void ResolveMiniGame(bool forceMiss = false)
@@ -457,7 +496,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
         if (!forceMiss)
         {
             if (_ringMiniGame)
-                quality = _timingRing.IsInTargetSector ? "точно" : "мимо";
+            {
+                var successes = _ringSuccesses;
+                quality = successes == _weaponShots ? "точно" : successes > 0 ? "удачно" : "мимо";
+            }
             else
             {
                 var distance = MathF.Abs(_barPosition - 0.5f);
@@ -465,7 +507,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
             }
         }
 
-        var message = $"{_pendingAttackMessage} (результат мини-игры: {quality})";
+        var resultDetails = _ringMiniGame
+            ? $"попаданий: {_ringSuccesses}/{_weaponShots}"
+            : $"результат мини-игры: {quality}";
+        var message = $"{_pendingAttackMessage} ({resultDetails}; {quality})";
         _miniGameActive = false;
         _miniGameResolved = true;
         _pendingAttackMessage = null;
@@ -503,7 +548,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
             return;
 
         if (_selectedAction is "shoots" or "stabs")
+        {
+            AttackSoundRequested?.Invoke(_selectedAction == "shoots");
             BeginMiniGame(message, radial: _selectedAction == "shoots");
+        }
         else
             TryRequestEmote(message);
     }
@@ -513,12 +561,29 @@ public sealed partial class CombatPanelWindow : FancyWindow
 internal sealed class TimingRingControl : Control
 {
     private float _angle;
+    private int _targetCount = 1;
+    private int _targetIndex;
     private const float RotationSpeed = MathF.PI * 1.35f;
-    public bool IsInTargetSector => (_angle >= 0.55f && _angle <= 1.05f)
-        || (_angle >= 3.65f && _angle <= 4.15f);
+    private const float SectorHalfWidth = 0.19f;
 
-    public void Reset() => _angle = 0f;
-    public void Advance(float delta) => _angle = (_angle + delta * RotationSpeed) % (MathF.PI * 2f);
+    public bool IsInTargetSector
+    {
+        get
+        {
+            var sectorAngle = MathF.Tau * (_targetIndex + 0.5f) / _targetCount;
+            var delta = MathF.Abs((_angle - sectorAngle + MathF.PI * 3f) % MathF.Tau - MathF.PI);
+            return delta <= SectorHalfWidth;
+        }
+    }
+
+    public void Configure(int targetCount) => _targetCount = Math.Clamp(targetCount, 1, 6);
+    public void AdvanceTarget() => _targetIndex = (_targetIndex + 1) % _targetCount;
+    public void Reset()
+    {
+        _angle = 0f;
+        _targetIndex = 0;
+    }
+    public void Advance(float delta) => _angle = (_angle + delta * RotationSpeed) % MathF.Tau;
 
     protected override void Draw(DrawingHandleScreen handle)
     {
@@ -526,24 +591,40 @@ internal sealed class TimingRingControl : Control
         var size = PixelSizeBox.Size;
         var center = new Vector2(size.X / 2f, size.Y / 2f);
         var radius = MathF.Min(size.X, size.Y) * 0.39f;
-        handle.DrawCircle(center, radius, new Color(205, 205, 190), false);
-        handle.DrawCircle(center, radius - 5f, new Color(75, 75, 70), false);
-        DrawSector(handle, center, radius, 0.55f, 1.05f, new Color(164, 55, 48));
-        DrawSector(handle, center, radius, 3.65f, 4.15f, new Color(164, 55, 48));
-        var needle = center + new Vector2(MathF.Cos(_angle), MathF.Sin(_angle)) * (radius - 8f);
-        handle.DrawLine(center, needle, new Color(235, 235, 220));
-        handle.DrawCircle(center, 5f, new Color(205, 205, 190));
+        handle.DrawCircle(center, radius + 8f, new Color(155, 145, 126), true);
+        handle.DrawCircle(center, radius + 4f, new Color(55, 52, 47), true);
+        handle.DrawCircle(center, radius - 7f, new Color(23, 25, 25), true);
+
+        for (var sector = 0; sector < _targetCount; sector++)
+        {
+            var middle = MathF.Tau * (sector + 0.5f) / _targetCount;
+            DrawSector(handle, center, radius, middle - SectorHalfWidth, middle + SectorHalfWidth,
+                sector == _targetIndex ? new Color(220, 65, 48) : new Color(125, 48, 42));
+        }
+
+        for (var rivet = 0; rivet < 8; rivet++)
+        {
+            var angle = MathF.Tau * rivet / 8f;
+            var point = center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (radius + 6f);
+            handle.DrawCircle(point, 2.5f, new Color(205, 190, 160), true);
+        }
+
+        var needle = center + new Vector2(MathF.Cos(_angle), MathF.Sin(_angle)) * (radius - 10f);
+        handle.DrawLine(center, needle, new Color(245, 226, 190));
+        handle.DrawCircle(center, 7f, new Color(195, 180, 151), true);
+        handle.DrawCircle(center, 3f, new Color(45, 42, 38), true);
     }
 
     private static void DrawSector(DrawingHandleScreen handle, Vector2 center, float radius, float start, float end, Color color)
     {
         var previous = center + new Vector2(MathF.Cos(start), MathF.Sin(start)) * radius;
-        const int segments = 12;
+        const int segments = 16;
         for (var i = 1; i <= segments; i++)
         {
             var angle = start + (end - start) * i / segments;
             var next = center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius;
             handle.DrawLine(previous, next, color);
+            handle.DrawCircle(next, 3.5f, color, true);
             previous = next;
         }
     }
