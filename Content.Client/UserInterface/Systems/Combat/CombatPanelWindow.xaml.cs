@@ -53,23 +53,35 @@ public sealed partial class CombatPanelWindow : FancyWindow
         MiniGameVisualContainer.AddChild(_timingBar);
         _timingRing.Visible = false;
         _timingBar.Visible = false;
-        var steelFrame = new StyleBoxFlat
+        var steelFrame = new StyleBoxPanel
         {
             BackgroundColor = new Color(25, 23, 21),
             BorderColor = new Color(126, 75, 49),
-            BorderThickness = new Thickness(2),
+            InnerBorderColor = new Color(65, 49, 40),
+            HighlightColor = new Color(174, 126, 83),
+            BorderThickness = new Thickness(3),
+            CornerRadius = 13f,
         };
-        var insetFrame = new StyleBoxFlat
+        var insetFrame = new StyleBoxPanel
         {
             BackgroundColor = new Color(16, 17, 17),
             BorderColor = new Color(91, 65, 51),
-            BorderThickness = new Thickness(1),
+            InnerBorderColor = new Color(55, 42, 35),
+            HighlightColor = new Color(133, 100, 73),
+            BorderThickness = new Thickness(2),
+            CornerRadius = 9f,
+            ShowRivets = false,
+            ShowAccent = false,
         };
-        var bloodFrame = new StyleBoxFlat
+        var bloodFrame = new StyleBoxPanel
         {
             BackgroundColor = new Color(31, 17, 17),
             BorderColor = new Color(151, 48, 43),
-            BorderThickness = new Thickness(2),
+            InnerBorderColor = new Color(77, 37, 34),
+            HighlightColor = new Color(168, 91, 72),
+            AccentColor = new Color(116, 29, 31),
+            BorderThickness = new Thickness(3),
+            CornerRadius = 11f,
         };
         HeaderFrame.PanelOverride = steelFrame;
         ActionFrame.PanelOverride = insetFrame;
@@ -79,18 +91,6 @@ public sealed partial class CombatPanelWindow : FancyWindow
         CombatTab.PanelOverride = insetFrame;
         StatusTab.PanelOverride = insetFrame;
         EquipmentTab.PanelOverride = insetFrame;
-
-        var copperTint = new Color(222, 187, 153);
-        foreach (var button in new[]
-        {
-            ShootButton, StabButton, PunchButton, KickButton,
-            HeadButton, ChestButton, LeftArmButton, RightArmButton,
-            LeftLegButton, RightLegButton, PerformButton, MiniGameHitButton,
-            AmmunitionToggleButton,
-        })
-        {
-            button.ModulateSelfOverride = copperTint;
-        }
 
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
