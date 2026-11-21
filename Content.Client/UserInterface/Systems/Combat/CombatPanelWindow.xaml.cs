@@ -19,6 +19,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private string? _weaponName;
     private int _remainingActions = MaxActionsPerTurn;
     private bool _isIncoming;
+    private readonly Dictionary<Button, bool> _ammunitionButtonAvailability = new();
 
     public EntityUid? Target => _target;
     public bool IsIncoming => _isIncoming;
@@ -126,22 +127,24 @@ public sealed partial class CombatPanelWindow : FancyWindow
         UpdateTurnControls();
     }
 
-    public void SetAmmunitionItems(IEnumerable<(string Name, string Details, Action Use)> items)
+    public void SetAmmunitionItems(IEnumerable<(string Name, string Details, bool IsAvailable, Action Use)> items)
     {
+        _ammunitionButtonAvailability.Clear();
         AmmunitionContainer.RemoveAllChildren();
 
-        foreach (var (name, details, use) in items)
+        foreach (var (name, details, isAvailable, use) in items)
         {
             var button = new Button
             {
                 Text = $"{name} — {details}",
                 HorizontalExpand = true,
-                Disabled = _remainingActions <= 0 || details.Contains("нужно оружие"),
+                Disabled = _remainingActions <= 0 || !isAvailable,
             };
+            _ammunitionButtonAvailability[button] = isAvailable;
 
             button.OnPressed += _ =>
             {
-                if (_remainingActions <= 0 || button.Disabled)
+                if (_remainingActions <= 0 || !isAvailable)
                     return;
 
                 use();
@@ -188,10 +191,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
     public bool TryRequestEmote(string message)
     {
-        if (_remainingActions <= 0)
+        if (_remainingActions <= 0 || EmoteRequested == null)
             return false;
 
-        EmoteRequested?.Invoke(message);
+        EmoteRequested.Invoke(message);
         ConsumeTurn();
         return true;
     }
@@ -209,28 +212,29 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private void UpdateTurnControls()
     {
         TurnCountLabel.Text = $"Действий осталось: {_remainingActions}/{MaxActionsPerTurn}";
-        TurnStateLabel.Text = _remainingActions == 0
+        TurnStateLabel.Text = _remainingActions <= 0
             ? "Ожидание ответа соперника"
             : "Можно действовать";
 
-        ShootButton.Disabled = _remainingActions == 0;
-        StabButton.Disabled = _remainingActions == 0;
-        PunchButton.Disabled = _remainingActions == 0;
-        KickButton.Disabled = _remainingActions == 0;
-        PerformButton.Disabled = _remainingActions == 0
+        ShootButton.Disabled = _remainingActions <= 0;
+        StabButton.Disabled = _remainingActions <= 0;
+        PunchButton.Disabled = _remainingActions <= 0;
+        KickButton.Disabled = _remainingActions <= 0;
+        PerformButton.Disabled = _remainingActions <= 0
             || _selectedAction == null
             || _selectedPart == null;
 
         foreach (var child in MedicalItemsContainer.Children)
         {
             if (child is Button button)
-                button.Disabled = _remainingActions == 0;
+                button.Disabled = _remainingActions <= 0;
         }
 
         foreach (var child in AmmunitionContainer.Children)
         {
             if (child is Button button)
-                button.Disabled = _remainingActions == 0 || button.Text.Contains("нужно оружие");
+                button.Disabled = _remainingActions <= 0
+                    || !_ammunitionButtonAvailability.GetValueOrDefault(button);
         }
     }
 
@@ -322,7 +326,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         return action switch
         {
             "shoots" => "Выстрелить",
-            "stabs" => "Ударить ножом",
+            "stabs" => "Ударить оружием",
             "punches" => "Ударить кулаком",
             "kicks" => "Пнуть",
             _ => action,
@@ -349,12 +353,12 @@ public sealed partial class CombatPanelWindow : FancyWindow
             return;
 
         var part = GetPartLabel(_selectedPart);
-        var weapon = string.IsNullOrWhiteSpace(_weaponName) ? "оружия" : $"«{_weaponName}»";
+        var weapon = string.IsNullOrWhiteSpace(_weaponName) ? "оружия ближнего боя" : $"«{_weaponName}»";
 
         var message = _selectedAction switch
         {
             "shoots" => $"пытается атаковать «{_targetName}»: стреляет в область «{part}» из {weapon}",
-            "stabs" => $"пытается атаковать «{_targetName}»: наносит удар ножом в область «{part}» с помощью {weapon}",
+            "stabs" => $"пытается атаковать «{_targetName}»: наносит удар оружием {weapon} в область «{part}»",
             "punches" => $"пытается атаковать «{_targetName}»: бьёт кулаком в область «{part}»",
             "kicks" => $"пытается атаковать «{_targetName}»: наносит удар ногой в область «{part}»",
             _ => null,

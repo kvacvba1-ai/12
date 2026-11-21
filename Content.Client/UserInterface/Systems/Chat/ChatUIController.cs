@@ -662,8 +662,17 @@ public sealed partial class ChatUIController : UIController
     {
         UpdateQueuedSpeechBubbles(delta);
 
-        if (_combatPanelWindow is not { IsOpen: true, Target: { } target } || !_ent.EntityExists(target))
+        var combatPanelWindow = _combatPanelWindow;
+        if (combatPanelWindow is not { IsOpen: true, Target: { } target })
             return;
+
+        if (!_ent.EntityExists(target)
+            || _player.LocalEntity is not { } localPlayer
+            || !_ent.EntityExists(localPlayer))
+        {
+            combatPanelWindow.Close();
+            return;
+        }
 
         _combatPanelRefreshTimer += TimeSpan.FromSeconds(delta.DeltaSeconds);
         _medicalRefreshTimer += TimeSpan.FromSeconds(delta.DeltaSeconds);
@@ -1089,6 +1098,7 @@ public sealed partial class ChatUIController : UIController
             _combatPanelWindow = UIManager.CreateWindow<CombatPanelWindow>();
             _combatPanelWindow.EmoteRequested += message =>
                 _manager.SendMessage(message, ChatSelectChannel.Emotes);
+            _combatPanelWindow.OnClose += OnCombatPanelClosed;
         }
 
         var targetName = Identity.Name(target, _ent);
@@ -1109,6 +1119,16 @@ public sealed partial class ChatUIController : UIController
 
         if (!_combatPanelWindow.IsOpen)
             _combatPanelWindow.Open();
+    }
+
+    private void OnCombatPanelClosed()
+    {
+        if (_healthDollEntity is { } doll && _ent.EntityExists(doll))
+            _ent.QueueDeleteEntity(doll);
+
+        _healthDollEntity = null;
+        _lastBodyStatus = null;
+        _combatPanelWindow?.SetHealthDoll(null);
     }
 
     private void UpdateCombatPanelActions()
@@ -1223,6 +1243,16 @@ public sealed partial class ChatUIController : UIController
         while (slots.NextItem(out var item))
             AddMedicalItem(item);
 
+        if (_ent.TryGetComponent<HandsComponent>(user, out var handsComponent))
+        {
+            var handsSystem = _ent.System<HandsSystem>();
+            foreach (var handId in handsComponent.Hands.Keys)
+            {
+                if (handsSystem.GetHeldItem((user, handsComponent), handId) is { } held)
+                    AddMedicalItem(held);
+            }
+        }
+
         while (pendingStorage.TryDequeue(out var storageEntity))
         {
             if (!_ent.TryGetComponent<StorageComponent>(storageEntity, out var storage))
@@ -1243,14 +1273,62 @@ public sealed partial class ChatUIController : UIController
             if (IsMedicalSupply(itemName.ToLowerInvariant()))
             {
                 var capturedName = itemName;
+                var capturedItem = item;
                 items.Add((itemName, () =>
+                {
+                    if (_player.LocalEntity is not { } currentUser
+                        || !IsCombatPanelItemAvailable(currentUser, capturedItem))
+                        return;
+
                     _combatPanelWindow?.TryRequestEmote(
-                        $"пытается оказать себе медицинскую помощь с помощью «{capturedName}»")));
+                        $"пытается оказать себе медицинскую помощь с помощью «{capturedName}»");
+                }));
             }
 
             if (_ent.HasComponent<StorageComponent>(item))
                 pendingStorage.Enqueue(item);
         }
+    }
+
+    private bool IsCombatPanelItemAvailable(EntityUid user, EntityUid item)
+    {
+        if (!_ent.EntityExists(user)
+            || !_ent.EntityExists(item)
+            || !_ent.TryGetComponent<InventoryComponent>(user, out var inventory))
+            return false;
+
+        var pending = new Queue<EntityUid>();
+        var visited = new HashSet<EntityUid>();
+        var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
+        while (slots.NextItem(out var wornItem))
+            pending.Enqueue(wornItem);
+
+        if (_ent.TryGetComponent<HandsComponent>(user, out var handsComponent))
+        {
+            var handsSystem = _ent.System<HandsSystem>();
+            foreach (var handId in handsComponent.Hands.Keys)
+            {
+                if (handsSystem.GetHeldItem((user, handsComponent), handId) is { } held)
+                    pending.Enqueue(held);
+            }
+        }
+
+        while (pending.TryDequeue(out var current))
+        {
+            if (!visited.Add(current) || !_ent.EntityExists(current))
+                continue;
+
+            if (current == item)
+                return true;
+
+            if (!_ent.TryGetComponent<StorageComponent>(current, out var storage))
+                continue;
+
+            foreach (var contained in storage.Container.ContainedEntities)
+                pending.Enqueue(contained);
+        }
+
+        return false;
     }
 
     private void UpdateCombatPanelAmmunition()
@@ -1259,13 +1337,13 @@ public sealed partial class ChatUIController : UIController
             || _player.LocalEntity is not { } user
             || !_ent.TryGetComponent<InventoryComponent>(user, out var inventory))
         {
-            _combatPanelWindow?.SetAmmunitionItems(Array.Empty<(string Name, string Details, Action Use)>());
+            _combatPanelWindow?.SetAmmunitionItems(Array.Empty<(string Name, string Details, bool IsAvailable, Action Use)>());
             return;
         }
 
         var heldGun = _ent.System<HandsSystem>().GetActiveHandEntity();
         var canReload = heldGun is { } gun && _ent.HasComponent<GunComponent>(gun);
-        var items = new List<(string Name, string Details, Action Use)>();
+        var items = new List<(string Name, string Details, bool IsAvailable, Action Use)>();
         var pendingStorage = new Queue<EntityUid>();
         var visited = new HashSet<EntityUid>();
         var slots = _ent.System<InventorySystem>().GetSlotEnumerator((user, inventory));
@@ -1306,8 +1384,7 @@ public sealed partial class ChatUIController : UIController
             var isThrowable = normalizedName.Contains("гранат")
                 || normalizedName.Contains("молотов")
                 || normalizedName.Contains("molotov")
-                || normalizedName.Contains("grenade")
-                || normalizedName.Contains("зажигатель");
+                || normalizedName.Contains("grenade");
 
             if (isAmmo || isThrowable)
             {
@@ -1318,16 +1395,23 @@ public sealed partial class ChatUIController : UIController
                         : _ent.TryGetComponent<BasicEntityAmmoProviderComponent>(item, out var basicAmmo)
                             ? basicAmmo.Count ?? 1
                             : 1;
-                var capturedGun = heldGun;
+                var capturedItem = item;
                 var details = isAmmo
                     ? $"{amount} шт. — {(canReload ? "для перезарядки" : "нужно оружие в активной руке")}"
                     : $"{amount} шт. — расходник";
 
-                items.Add((itemName, details, () =>
+                items.Add((itemName, details, !isAmmo || canReload, () =>
                 {
-                    if (isAmmo && canReload && capturedGun is { } targetGun
-                        && _ent.EntityExists(targetGun))
+                    if (_player.LocalEntity is not { } currentUser
+                        || !IsCombatPanelItemAvailable(currentUser, capturedItem))
+                        return;
+
+                    if (isAmmo)
                     {
+                        var activeGun = _ent.System<HandsSystem>().GetActiveHandEntity();
+                        if (activeGun is not { } targetGun || !_ent.HasComponent<GunComponent>(targetGun))
+                            return;
+
                         var gunName = Identity.Name(targetGun, _ent);
                         _combatPanelWindow?.TryRequestEmote(
                             $"перезаряжает «{gunName}» с помощью «{itemName}»");
