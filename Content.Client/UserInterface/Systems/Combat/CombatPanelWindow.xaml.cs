@@ -73,7 +73,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
             BorderThickness = new Thickness(3),
             CornerRadius = 13f,
         };
-        // The native Window root gets its own frame; no FancyWindow chrome or stock grey shell.
+        // The custom BaseWindow root gets its own frame; no stock window chrome.
         PanelOverride = new StyleBoxPanel
         {
             BackgroundColor = new Color(12, 13, 14),
@@ -106,6 +106,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
             BorderThickness = new Thickness(3),
             CornerRadius = 11f,
         };
+        WindowHeader.PanelOverride = steelFrame;
         HeaderFrame.PanelOverride = steelFrame;
         ActionFrame.PanelOverride = insetFrame;
         TargetZoneFrame.PanelOverride = bloodFrame;
