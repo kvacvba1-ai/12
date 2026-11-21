@@ -164,7 +164,7 @@ public sealed partial class ChatUIController : UIController
 
     private readonly HashSet<ChatBox> _chats = new();
     private CombatPanelWindow? _combatPanelWindow;
-    private Robust.Shared.Audio.IPlayingAudioStream? _combatPanelMusic;
+    private Action? _stopCombatPanelMusic;
     private bool _combatPanelModeEnabled;
     private TimeSpan _combatPanelRefreshTimer;
     private TimeSpan _medicalRefreshTimer;
@@ -1166,8 +1166,8 @@ public sealed partial class ChatUIController : UIController
 
     private void OnCombatPanelClosed()
     {
-        _combatPanelMusic?.Stop();
-        _combatPanelMusic = null;
+        _stopCombatPanelMusic?.Invoke();
+        _stopCombatPanelMusic = null;
 
         if (_healthDollEntity is { } doll && _ent.EntityExists(doll))
             _ent.QueueDeleteEntity(doll);
