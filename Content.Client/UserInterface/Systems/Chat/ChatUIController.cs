@@ -1161,7 +1161,7 @@ public sealed partial class ChatUIController : UIController
             var music = _ent.System<AudioSystem>().PlayGlobal(
                 "/Audio/Misc/YyYO8Si3WVA5QBwC4KaR1QQTDNvJDOE.ogg",
                 musicRecipient,
-                Robust.Shared.Audio.AudioParams.Default.WithLoop(true).WithVolume(-12f));
+                Robust.Shared.Audio.AudioParams.Default.WithLoop(true).WithVolume(6f));
             if (music is { } playingMusic)
             {
                 _stopCombatPanelMusic = () =>
