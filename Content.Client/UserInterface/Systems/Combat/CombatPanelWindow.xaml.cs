@@ -445,7 +445,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         MiniGameHitButton.Disabled = false;
         PerformButton.Disabled = true;
         _timingRing.Reset();
-        _timingBar.Position = 0f;
+        _timingBar.MarkerPosition = 0f;
     }
 
     private void ResolveMiniGame(bool forceMiss = false)
