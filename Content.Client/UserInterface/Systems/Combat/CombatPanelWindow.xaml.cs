@@ -42,6 +42,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     public bool IsIncoming => _isIncoming;
 
     public event Action<string>? EmoteRequested;
+    public event Action<bool>? AttackSoundRequested;
 
     public CombatPanelWindow()
     {
@@ -497,8 +498,6 @@ public sealed partial class CombatPanelWindow : FancyWindow
             if (_ringMiniGame)
             {
                 var successes = _ringSuccesses;
-                if (_ringCompleted == 0 && _timingRing.IsInTargetSector)
-                    successes = 1;
                 quality = successes == _weaponShots ? "точно" : successes > 0 ? "удачно" : "мимо";
             }
             else
@@ -549,7 +548,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
             return;
 
         if (_selectedAction is "shoots" or "stabs")
+        {
+            AttackSoundRequested?.Invoke(_selectedAction == "shoots");
             BeginMiniGame(message, radial: _selectedAction == "shoots");
+        }
         else
             TryRequestEmote(message);
     }
