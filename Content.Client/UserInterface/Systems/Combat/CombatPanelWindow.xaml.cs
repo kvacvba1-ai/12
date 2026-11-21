@@ -27,6 +27,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
     private readonly TimingRingControl _timingRing = new();
     private readonly TimingBarControl _timingBar = new();
     private bool _miniGameActive;
+    private bool _miniGameResolved;
     private bool _ringMiniGame;
     private float _miniGameElapsed;
     private string? _pendingAttackMessage;
@@ -47,6 +48,17 @@ public sealed partial class CombatPanelWindow : FancyWindow
         MiniGameVisualContainer.AddChild(_timingBar);
         _timingRing.Visible = false;
         _timingBar.Visible = false;
+        var terminalFrame = new StyleBoxFlat
+        {
+            BackgroundColor = Color.Black,
+            BorderColor = new Color(190, 190, 180),
+            BorderThickness = new Thickness(2),
+        };
+        HeaderFrame.PanelOverride = terminalFrame;
+        MiniGameContainer.PanelOverride = terminalFrame;
+        CombatTab.PanelOverride = terminalFrame;
+        StatusTab.PanelOverride = terminalFrame;
+        EquipmentTab.PanelOverride = terminalFrame;
 
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
@@ -65,7 +77,18 @@ public sealed partial class CombatPanelWindow : FancyWindow
         RightLegButton.OnPressed += _ => SelectPart("right leg");
 
         PerformButton.OnPressed += _ => Perform();
-        MiniGameHitButton.OnPressed += _ => ResolveMiniGame();
+        MiniGameHitButton.OnPressed += _ =>
+        {
+            if (_miniGameActive)
+                ResolveMiniGame();
+            else if (_miniGameResolved)
+            {
+                _miniGameResolved = false;
+                MiniGameContainer.Visible = false;
+                UpdateTurnControls();
+                UpdateSelection();
+            }
+        };
         AmmunitionToggleButton.OnPressed += _ =>
         {
             AmmunitionContainer.Visible = !AmmunitionContainer.Visible;
@@ -243,11 +266,11 @@ public sealed partial class CombatPanelWindow : FancyWindow
             ? "Ожидание двух действий соперника"
             : "Можно действовать";
 
-        ShootButton.Disabled = _remainingActions <= 0 || _miniGameActive;
-        StabButton.Disabled = _remainingActions <= 0 || _miniGameActive;
-        PunchButton.Disabled = _remainingActions <= 0;
-        KickButton.Disabled = _remainingActions <= 0;
-        PerformButton.Disabled = _miniGameActive || _remainingActions <= 0
+        ShootButton.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
+        StabButton.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
+        PunchButton.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
+        KickButton.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
+        PerformButton.Disabled = _miniGameActive || _miniGameResolved || _remainingActions <= 0
             || _selectedAction == null
             || _selectedPart == null;
 
@@ -405,7 +428,7 @@ public sealed partial class CombatPanelWindow : FancyWindow
         _barPosition = 0f;
         _barForward = true;
         MiniGameContainer.Visible = true;
-        MiniGameVisualContainer.Visible = radial;
+        MiniGameVisualContainer.Visible = true;
         _timingBar.Visible = !radial;
         _timingRing.Visible = radial;
         MiniGameTitleLabel.Text = radial ? "БАЛЛИСТИЧЕСКИЙ КОНТРОЛЬ" : "КОНТРОЛЬ УДАРА";
@@ -439,10 +462,10 @@ public sealed partial class CombatPanelWindow : FancyWindow
 
         var message = $"{_pendingAttackMessage} (результат мини-игры: {quality})";
         _miniGameActive = false;
+        _miniGameResolved = true;
         _pendingAttackMessage = null;
-        MiniGameContainer.Visible = false;
-        MiniGameHitButton.Disabled = true;
-        PerformButton.Disabled = false;
+        MiniGameHitButton.Text = "CONTINUE >>";
+        MiniGameHitButton.Disabled = false;
         MiniGameStatusLabel.Text = quality switch
         {
             "идеально" => "PERFECT // ИДЕАЛЬНО",
