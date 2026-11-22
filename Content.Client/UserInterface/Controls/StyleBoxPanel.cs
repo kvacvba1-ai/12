@@ -29,6 +29,7 @@ public sealed class StyleBoxPanel : StyleBox
     public bool ShowWear { get; set; } = true;
     public bool ShowBlood { get; set; }
     public bool ShowHazardStripe { get; set; }
+    public bool ShowGear { get; set; } = true;
 
     protected override void DoDraw(DrawingHandleScreen handle, UIBox2 box, float uiScale)
     {
