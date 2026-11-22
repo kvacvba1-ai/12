@@ -290,6 +290,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
             _pendingAttackMessage = null;
             _pendingAttackType = null;
             _pendingTargetPart = null;
+            _pendingTreatmentItem = null;
+            _pendingTreatmentType = null;
+            _pendingTreatmentPart = null;
             MiniGameContainer.Visible = false;
             TargetZoneFrame.Visible = false;
         }
