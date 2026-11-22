@@ -568,7 +568,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _pendingAttackMessage = $"медицинская процедура: {itemName}";
         _miniGameActive = true;
         _miniGameResolved = false;
-        _ringMiniGame = type == CombatPanelTreatmentType.Bandage;
+        // Medical procedures use the timing bar. The rotating ring is reserved
+        // exclusively for firearm shots and must never be reused for bandaging.
+        _ringMiniGame = false;
         _miniGameElapsed = 0f;
         _barPosition = 0f;
         _barForward = true;
