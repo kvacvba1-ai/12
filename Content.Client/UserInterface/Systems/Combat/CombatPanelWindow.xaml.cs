@@ -489,7 +489,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
     /// </summary>
     public void SetMedicalTreatmentItems(IEnumerable<(string Name, EntityUid Item, CombatPanelTreatmentType Type)> items)
     {
-        MedicalItemsContainer.RemoveAllChildren();
+        TreatmentItemsContainer.RemoveAllChildren();
 
         foreach (var (name, item, type) in items)
         {
@@ -502,7 +502,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
                 ModulateSelfOverride = type == CombatPanelTreatmentType.Bandage
                     ? new Color(220, 197, 157)
                     : new Color(163, 195, 190),
-                Disabled = _remainingActions <= 0 || _target == null,
+                Disabled = _remainingActions <= 0 || _target == null || _selectedTreatmentPart == null,
             };
 
             button.OnPressed += _ =>
@@ -513,12 +513,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
                 BeginTreatmentMiniGame(name, item, type, _selectedTreatmentPart.Value);
             };
 
-            MedicalItemsContainer.AddChild(button);
+            TreatmentItemsContainer.AddChild(button);
         }
 
-        var hasItems = MedicalItemsContainer.ChildCount > 0;
-        MedicalItemsContainer.Visible = hasItems;
-        MedicalEmptyLabel.Visible = !hasItems;
+        var hasItems = TreatmentItemsContainer.ChildCount > 0;
+        TreatmentItemsContainer.Visible = hasItems;
+        TreatmentEmptyLabel.Visible = !hasItems;
+        UpdateTurnControls();
     }
 
     private void SelectTreatmentPart(TargetBodyPart part)
