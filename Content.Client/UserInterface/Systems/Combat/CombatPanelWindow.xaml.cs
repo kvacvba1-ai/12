@@ -49,9 +49,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
     public CombatPanelWindow()
     {
         RobustXamlLoader.Load(this);
-        // Let child controls process clicks first; the window only consumes otherwise-unhandled input.
-        MouseFilter = MouseFilterMode.Pass;
-        TabContainer.TabsVisible = false;
+        // Mouse input must pass through every layout/frame container so nested buttons
+        // (including TabContainer's own tab buttons) can receive clicks.
+        SetMousePassThrough(this);
         TabContainer.CurrentTab = 0;
         Resizable = true;
         MinSize = new Vector2(620, 660);
@@ -110,7 +110,6 @@ public sealed partial class CombatPanelWindow : BaseWindow
             CornerRadius = 11f,
         };
         WindowHeader.PanelOverride = steelFrame;
-        TabNavigationFrame.PanelOverride = steelFrame;
         HeaderFrame.PanelOverride = steelFrame;
         ActionFrame.PanelOverride = insetFrame;
         TargetZoneFrame.PanelOverride = bloodFrame;
@@ -123,11 +122,6 @@ public sealed partial class CombatPanelWindow : BaseWindow
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
         TabContainer.SetTabTitle(EquipmentTab, "Снаряжение");
-
-        ActionsTabButton.OnPressed += _ => SelectTab(0);
-        StatusTabButton.OnPressed += _ => SelectTab(1);
-        EquipmentTabButton.OnPressed += _ => SelectTab(2);
-        UpdateTabButtonHighlights();
 
         ShootButton.OnPressed += _ => SelectAction("shoots");
         StabButton.OnPressed += _ => SelectAction("stabs");
@@ -168,31 +162,15 @@ public sealed partial class CombatPanelWindow : BaseWindow
         };
     }
 
-    private void SelectTab(int tab)
+    private static void SetMousePassThrough(Control control)
     {
-        if (tab < 0 || tab >= TabContainer.ChildCount)
-            return;
+        // Buttons keep their own handling mode; all structural controls must let
+        // the event reach their descendants before deciding whether to consume it.
+        if (control is not Button)
+            control.MouseFilter = MouseFilterMode.Pass;
 
-        TabContainer.CurrentTab = tab;
-        UpdateTabButtonHighlights();
-    }
-
-    private void UpdateTabButtonHighlights()
-    {
-        var buttons = new[]
-        {
-            (ActionsTabButton, 0),
-            (StatusTabButton, 1),
-            (EquipmentTabButton, 2),
-        };
-
-        foreach (var (button, tab) in buttons)
-        {
-            if (TabContainer.CurrentTab == tab)
-                button.StyleClasses.Add("positive");
-            else
-                button.StyleClasses.Remove("positive");
-        }
+        foreach (var child in control.Children)
+            SetMousePassThrough(child);
     }
 
     // The header is our own hit-test region. BaseWindow supplies the actual drag/resize machinery.
