@@ -23,6 +23,7 @@ using Content.Shared._Starlight.CollectiveMind; // Goobstation - Starlight colle
 using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
+using Content.Shared.Combat;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.IdentityManagement;
@@ -74,6 +75,7 @@ public sealed partial class ChatUIController : UIController
     [Dependency] private readonly IConfigurationManager _config = default!;
     [Dependency] private readonly IEyeManager _eye = default!;
     [Dependency] private readonly IEntityManager _ent = default!;
+    [Dependency] private readonly IEntityNetworkManager _entityNetwork = default!;
     [Dependency] private readonly IInputManager _input = default!;
     [Dependency] private readonly IClientNetManager _net = default!;
     [Dependency] private readonly IPlayerManager _player = default!;
@@ -1125,6 +1127,18 @@ public sealed partial class ChatUIController : UIController
             _combatPanelWindow = UIManager.CreateWindow<CombatPanelWindow>();
             _combatPanelWindow.EmoteRequested += message =>
                 _manager.SendMessage(message, ChatSelectChannel.Emotes);
+            _combatPanelWindow.AttackRequested += (part, attackType, successfulHits, quality) =>
+            {
+                if (_combatPanelWindow?.Target is not { } attackTarget || !_ent.EntityExists(attackTarget))
+                    return;
+
+                _entityNetwork.SendSystemNetworkMessage(new CombatPanelAttackEvent(
+                    _ent.GetNetEntity(attackTarget),
+                    part,
+                    attackType,
+                    successfulHits,
+                    quality));
+            };
             _combatPanelWindow.AttackSoundRequested += firearm =>
             {
                 if (_player.LocalEntity is not { } localPlayer)
