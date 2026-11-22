@@ -1400,12 +1400,11 @@ public sealed partial class ChatUIController : UIController
             {
                 var capturedInjector = item;
                 var capturedInjectorName = itemName;
-                var capturedHand = injectorHand;
                 items.Add((itemName, () =>
                 {
                     if (_player.LocalEntity is not { } currentUser
                         || !IsCombatPanelItemAvailable(currentUser, capturedInjector)
-                        || _ent.System<HandsSystem>().GetHeldItem((currentUser, _ent.GetComponent<HandsComponent>(currentUser)), capturedHand) != capturedInjector)
+                        || !TryGetCombatPanelHand(currentUser, capturedInjector, out _))
                         return;
 
                     var coordinates = _ent.GetComponent<TransformComponent>(currentUser).Coordinates;
