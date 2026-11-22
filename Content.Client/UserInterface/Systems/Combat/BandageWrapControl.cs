@@ -55,7 +55,7 @@ public sealed class BandageWrapControl : Control
             return;
 
         var pointer = args.RelativePixelPosition;
-        var center = (Vector2) PixelSize / 2f;
+        var center = new Vector2(PixelWidth / 2f, PixelHeight / 2f);
         var roll = GetRollPosition(center, _progress);
         if (Vector2.DistanceSquared(pointer, roll) > GrabRadius * GrabRadius)
             return;
@@ -82,7 +82,7 @@ public sealed class BandageWrapControl : Control
         if (!_dragging || _completed)
             return;
 
-        var center = PixelSize / 2f;
+        var center = new Vector2(PixelWidth / 2f, PixelHeight / 2f);
         var pointer = args.RelativePixelPosition;
         var offset = pointer - center;
         var distance = offset.Length();
@@ -128,7 +128,7 @@ public sealed class BandageWrapControl : Control
     {
         base.Draw(handle);
 
-        var center = PixelSize / 2f;
+        var center = new Vector2(PixelWidth / 2f, PixelHeight / 2f);
         var radius = TrackRadius;
 
         // Recessed circular guide.
