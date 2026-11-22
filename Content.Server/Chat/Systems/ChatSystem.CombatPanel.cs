@@ -35,33 +35,52 @@ public sealed partial class ChatSystem
             return;
 
         var damage = new DamageSpecifier(_prototypeManager.Index<DamageTypePrototype>(damageType), damageAmount);
-        var applied = _combatDamageable.TryChangeDamage(
+
+        // Resolve the requested limb to its actual body-part entity first.
+        // DamageableSystem.TryChangeDamage(target, targetPart: ...) can fall back
+        // to Chest when the victim has no TargetingComponent, even if targetPart
+        // was explicitly supplied. Applying damage to the part entity avoids that
+        // routing bug and guarantees that the selected side is the one hit.
+        var bodyPartQuery = _combatBody.ConvertTargetBodyPart(targetPart);
+        var targetParts = _combatBody.GetBodyChildrenOfTypeWithComponent<DamageableComponent>(
             target,
+            bodyPartQuery.Type,
+            symmetry: bodyPartQuery.Symmetry).ToList();
+
+        if (targetParts.Count == 0)
+            return;
+
+        // A body-part type + symmetry should identify one limb. If a species has
+        // multiple matching segments, keep the attack deterministic and hit the
+        // first matching segment rather than spreading one shot across all of them.
+        var selectedPartUid = targetParts[0].Id;
+        var applied = _combatDamageable.TryChangeDamage(
+            selectedPartUid,
             damage,
             origin: source,
-            targetPart: targetPart,
             canMiss: false);
 
         if (applied is null || applied.Empty)
             return;
 
-        // The wound system updates TargetingComponent.BodyStatus as integrity changes.
-        // Once the selected limb is critically damaged, use its native amputation path.
-        var query = _combatBody.ConvertTargetBodyPart(targetPart);
-        var bodyParts = _combatBody.GetBodyChildrenOfTypeWithComponent<WoundableComponent>(
+        // Check only the exact part that received damage. The wound system updates
+        // its integrity and the health analyzer's BodyStatus through normal events.
+        var woundableParts = _combatBody.GetBodyChildrenOfTypeWithComponent<WoundableComponent>(
             target,
-            query.Type,
-            symmetry: query.Symmetry);
+            bodyPartQuery.Type,
+            symmetry: bodyPartQuery.Symmetry);
 
-        foreach (var (partUid, _, woundable) in bodyParts)
+        foreach (var (partUid, _, woundable) in woundableParts)
         {
-            if (!woundable.CanRemove
+            if (partUid != selectedPartUid
+                || !woundable.CanRemove
                 || woundable.ParentWoundable is not { } parent
                 || woundable.IntegrityCap <= 0
                 || (float) woundable.WoundableIntegrity > (float) woundable.IntegrityCap * CombatAmputationIntegrityRatio)
                 continue;
 
             _combatWounds.AmputateWoundable(parent, partUid, woundable);
+            break;
         }
     }
 
