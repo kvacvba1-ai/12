@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <combat:CombatPanelWindow xmlns="https://spacestation14.io"
                           xmlns:combat="clr-namespace:Content.Client.UserInterface.Systems.Combat">
     <PanelContainer Name="WindowFrame" HorizontalExpand="True" VerticalExpand="True">
-        <BoxContainer Orientation="Vertical" SeparationOverride="0" HorizontalExpand="True">
+        <BoxContainer Orientation="Vertical" SeparationOverride="0" HorizontalExpand="True" VerticalExpand="True">
         <PanelContainer Name="WindowHeader" HorizontalExpand="True">
             <BoxContainer Orientation="Horizontal" SeparationOverride="6" Margin="10 7" HorizontalExpand="True">
                 <BoxContainer Orientation="Vertical" SeparationOverride="1" HorizontalExpand="True">
@@ -17,7 +17,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <Button Name="CloseWindowButton" Text="✕" MinSize="34 28" />
             </BoxContainer>
         </PanelContainer>
-        <BoxContainer Name="WindowBody" Orientation="Vertical" SeparationOverride="5" Margin="5" HorizontalExpand="True">
+        <BoxContainer Name="WindowBody" Orientation="Vertical" SeparationOverride="5" Margin="5" HorizontalExpand="True" VerticalExpand="True">
         <PanelContainer Name="HeaderFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
             <BoxContainer Orientation="Vertical" SeparationOverride="4" Margin="9" HorizontalExpand="True">
                 <Label Text="БОЕВОЙ ТЕРМИНАЛ // TRENCHFACE" StyleClasses="LabelHeading" />
@@ -32,7 +32,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
         </PanelContainer>
 
         <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True">
-            <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
+            <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
                         <Label Text="ВЫБОР БОЕВОГО ДЕЙСТВИЯ" StyleClasses="LabelHeading" />
@@ -65,7 +65,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 </ScrollContainer>
             </PanelContainer>
 
-            <PanelContainer Name="StatusTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
+            <PanelContainer Name="StatusTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
                         <Label Text="ДИАГНОСТИКА ЦЕЛИ" StyleClasses="LabelHeading" />
@@ -78,7 +78,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 </ScrollContainer>
             </PanelContainer>
 
-            <PanelContainer Name="EquipmentTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
+            <PanelContainer Name="EquipmentTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
                         <Label Text="МЕДИЦИНСКОЕ СНАРЯЖЕНИЕ" StyleClasses="LabelHeading" />
