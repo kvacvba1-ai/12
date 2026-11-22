@@ -118,7 +118,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <BoxContainer Orientation="Vertical" SeparationOverride="4" Margin="7" HorizontalExpand="True">
                         <Label Name="MiniGameTitleLabel" Text="ПРОВЕРКА МОМЕНТА" StyleClasses="LabelHeading" />
                         <Label Name="MiniGameHintLabel" Text="ДОЖДИТЕСЬ ПОДХОДЯЩЕГО МОМЕНТА" />
-                        <BoxContainer Name="MiniGameVisualContainer" Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Center" MinSize="190 190" />
+                        <BoxContainer Name="MiniGameVisualContainer" Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Center" MinSize="280 280" />
                         <Label Name="MiniGameStatusLabel" Text="ГОТОВНОСТЬ" StyleClasses="LabelHeading" />
                         <combat:CombatPanelButton Name="MiniGameHitButton" Text="ЗАФИКСИРОВАТЬ" />
                     </BoxContainer>
