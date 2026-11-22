@@ -927,8 +927,11 @@ public sealed partial class CombatPanelWindow : BaseWindow
         {
             if (_target is { } treatmentTarget)
             {
-                if (!_ringMiniGame && !forceMiss)
+                if (forceMiss)
+                    TreatmentStageRequested?.Invoke(treatmentTarget, treatmentItem, treatmentPart, treatmentType, CombatPanelTreatmentStage.Cancel);
+                else if (!_ringMiniGame)
                     TreatmentStageRequested?.Invoke(treatmentTarget, treatmentItem, treatmentPart, treatmentType, CombatPanelTreatmentStage.Hit);
+
                 ConsumeTurn();
             }
         }
