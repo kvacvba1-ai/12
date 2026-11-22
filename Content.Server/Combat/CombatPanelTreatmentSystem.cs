@@ -24,8 +24,6 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
     private const float BandageTimeoutSeconds = 45f;
     private const float BandageMinimumWrapSeconds = 1.15f;
     private const float InjectionMarkerSpeed = 1.65f;
-    private const float BandagePerfectHalfWidth = 0.07f;
-    private const float BandageGoodHalfWidth = 0.20f;
 
     [Dependency] private readonly InventorySystem _inventory = default!;
     [Dependency] private readonly HealingSystem _healing = default!;
@@ -159,17 +157,11 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
         var phase = (float) elapsed * InjectionMarkerSpeed % 2f;
         var markerPosition = 1f - MathF.Abs(phase - 1f);
         var distance = MathF.Abs(markerPosition - 0.5f);
-        var quality = message.Treatment == CombatPanelTreatmentType.Bandage
-            ? distance <= BandagePerfectHalfWidth
-                ? CombatPanelTreatmentQuality.Perfect
-                : distance <= BandageGoodHalfWidth
-                    ? CombatPanelTreatmentQuality.Good
-                    : CombatPanelTreatmentQuality.Miss
-            : distance <= 0.04f
-                ? CombatPanelTreatmentQuality.Perfect
-                : distance <= 0.12f
-                    ? CombatPanelTreatmentQuality.Good
-                    : CombatPanelTreatmentQuality.Miss;
+        var quality = distance <= 0.04f
+            ? CombatPanelTreatmentQuality.Perfect
+            : distance <= 0.12f
+                ? CombatPanelTreatmentQuality.Good
+                : CombatPanelTreatmentQuality.Miss;
 
         _challenges.Remove(user);
         ApplyTreatment(user, target, item, message.Part, message.Treatment, quality);
