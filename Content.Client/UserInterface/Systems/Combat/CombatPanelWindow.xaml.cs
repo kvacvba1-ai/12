@@ -76,7 +76,11 @@ public sealed partial class CombatPanelWindow : BaseWindow
         UpdateTabNavigation();
         Resizable = true;
         MinSize = new Vector2(560, 600);
-        CloseWindowButton.OnPressed += _ => Close();
+        CloseWindowButton.OnPressed += _ =>
+        {
+            CancelActiveTreatment();
+            Close();
+        };
         MinimizeWindowButton.OnPressed += _ =>
         {
             WindowBody.Visible = !WindowBody.Visible;
@@ -295,6 +299,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
         if (!sameEncounter)
         {
+            CancelActiveTreatment();
             _selectedAction = null;
             _selectedPart = null;
             _selectedTreatmentPart = null;
@@ -571,6 +576,27 @@ public sealed partial class CombatPanelWindow : BaseWindow
         }
     }
 
+    private void CancelActiveTreatment()
+    {
+        if (!_miniGameActive
+            || _pendingTreatmentItem is not { } item
+            || _pendingTreatmentType is not { } type
+            || _pendingTreatmentPart is not { } part
+            || _target is not { } target)
+            return;
+
+        TreatmentStageRequested?.Invoke(target, item, part, type, CombatPanelTreatmentStage.Cancel);
+        _miniGameActive = false;
+        _miniGameResolved = false;
+        _pendingTreatmentItem = null;
+        _pendingTreatmentType = null;
+        _pendingTreatmentPart = null;
+        _pendingAttackMessage = null;
+        _bandageWrap.Visible = false;
+        MiniGameContainer.Visible = false;
+        UpdateTurnControls();
+    }
+
     private void BeginTreatmentMiniGame(
         string itemName,
         EntityUid item,
@@ -845,7 +871,8 @@ public sealed partial class CombatPanelWindow : BaseWindow
             _timingBar.MarkerPosition = _barPosition;
         }
 
-        if (_miniGameElapsed >= 8f)
+        var timeout = _pendingTreatmentType == CombatPanelTreatmentType.Bandage ? 45f : 8f;
+        if (_miniGameElapsed >= timeout)
             ResolveMiniGame(forceMiss: true);
     }
 
