@@ -28,6 +28,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     </BoxContainer>
                 </PanelContainer>
 
+                <BoxContainer Orientation="Horizontal" SeparationOverride="4" HorizontalExpand="True">
+                    <combat:CombatPanelButton Name="CombatNavActionsButton" Text="БОЙ" MinSize="0 27" HorizontalExpand="True" />
+                    <combat:CombatPanelButton Name="CombatNavStatusButton" Text="ТЕЛО" MinSize="0 27" HorizontalExpand="True" />
+                    <combat:CombatPanelButton Name="CombatNavEquipmentButton" Text="СНАРЯГА" MinSize="0 27" HorizontalExpand="True" />
+                </BoxContainer>
                 <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True">
                     <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
                         <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
