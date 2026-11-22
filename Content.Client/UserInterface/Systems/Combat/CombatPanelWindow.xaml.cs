@@ -594,6 +594,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _pendingTreatmentPart = null;
         _pendingAttackMessage = null;
         _bandageWrap.Visible = false;
+        MiniGameHitButton.Visible = true;
         MiniGameContainer.Visible = false;
         UpdateTurnControls();
     }
@@ -610,8 +611,8 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _pendingAttackMessage = $"медицинская процедура: {itemName}";
         _miniGameActive = true;
         _miniGameResolved = false;
-        // Medical procedures use the timing bar. The rotating ring is reserved
-        // exclusively for firearm shots and must never be reused for bandaging.
+        // Bandaging has its own pointer-driven wrap control. Injections retain
+        // the timing bar, while the rotating ring remains exclusive to firearm shots.
         _ringMiniGame = false;
         _miniGameElapsed = 0f;
         _barPosition = 0f;
@@ -889,6 +890,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _ringSuccesses = 0;
         MiniGameContainer.Visible = true;
         MiniGameVisualContainer.Visible = true;
+        MiniGameHitButton.Visible = true;
         _timingBar.Visible = !radial;
         _timingRing.Visible = radial;
         MiniGameTitleLabel.Text = radial ? "БАЛЛИСТИЧЕСКИЙ КОНТРОЛЬ" : "КОНТРОЛЬ УДАРА";
