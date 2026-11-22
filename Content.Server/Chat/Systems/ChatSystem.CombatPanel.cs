@@ -21,7 +21,7 @@ public sealed partial class ChatSystem
     [Dependency] private readonly SharedBodySystem _combatBody = default!;
     [Dependency] private readonly WoundSystem _combatWounds = default!;
 
-    private const float CombatShotDamage = 12f;
+    private const float CombatShotDamage = 16f;
     private const float CombatStabDamage = 16f;
     private const float CombatPunchDamage = 6f;
     private const float CombatKickDamage = 8f;
