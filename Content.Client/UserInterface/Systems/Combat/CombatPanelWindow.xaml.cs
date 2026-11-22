@@ -41,7 +41,6 @@ public sealed partial class CombatPanelWindow : BaseWindow
     private EntityUid? _pendingTreatmentItem;
     private CombatPanelTreatmentType? _pendingTreatmentType;
     private TargetBodyPart? _pendingTreatmentPart;
-    private string? _pendingTreatmentName;
     private float _barPosition;
     private bool _barForward = true;
     private int _weaponShots = 1;
@@ -55,7 +54,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
     public event Action<string>? EmoteRequested;
     public event Action<TargetBodyPart, CombatPanelAttackType, int, CombatPanelAttackQuality>? AttackRequested;
     public event Action<bool>? AttackSoundRequested;
-    public event Action<EntityUid, TargetBodyPart, CombatPanelTreatmentType, CombatPanelTreatmentQuality>? TreatmentRequested;
+    public event Action<EntityUid, EntityUid, TargetBodyPart, CombatPanelTreatmentType, CombatPanelTreatmentQuality>? TreatmentRequested;
 
     public CombatPanelWindow()
     {
@@ -493,7 +492,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
                 ModulateSelfOverride = type == CombatPanelTreatmentType.Bandage
                     ? new Color(220, 197, 157)
                     : new Color(163, 195, 190),
-                Disabled = _remainingActions <= 0 || _target == null || _selectedPart == null,
+                Disabled = _remainingActions <= 0 || _target == null,
             };
 
             button.OnPressed += _ =>
@@ -539,7 +538,6 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _pendingTreatmentItem = item;
         _pendingTreatmentType = type;
         _pendingTreatmentPart = part;
-        _pendingTreatmentName = itemName;
         _pendingAttackMessage = $"медицинская процедура: {itemName}";
         _miniGameActive = true;
         _miniGameResolved = false;
@@ -881,9 +879,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
                 _ => CombatPanelTreatmentQuality.Miss,
             };
 
-            if (TreatmentRequested != null && treatmentQuality != CombatPanelTreatmentQuality.Miss)
+            if (TreatmentRequested != null && _target is { } treatmentTarget)
             {
-                TreatmentRequested.Invoke(treatmentItem, treatmentPart, treatmentType, treatmentQuality);
+                TreatmentRequested.Invoke(treatmentTarget, treatmentItem, treatmentPart, treatmentType, treatmentQuality);
                 ConsumeTurn();
             }
         }
@@ -908,7 +906,6 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _pendingTreatmentItem = null;
         _pendingTreatmentType = null;
         _pendingTreatmentPart = null;
-        _pendingTreatmentName = null;
         UpdateTurnControls();
         UpdateSelection();
     }
