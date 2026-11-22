@@ -38,6 +38,10 @@ public sealed partial class CombatPanelWindow : BaseWindow
     private string? _pendingAttackMessage;
     private CombatPanelAttackType? _pendingAttackType;
     private TargetBodyPart? _pendingTargetPart;
+    private EntityUid? _pendingTreatmentItem;
+    private CombatPanelTreatmentType? _pendingTreatmentType;
+    private TargetBodyPart? _pendingTreatmentPart;
+    private string? _pendingTreatmentName;
     private float _barPosition;
     private bool _barForward = true;
     private int _weaponShots = 1;
@@ -51,6 +55,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
     public event Action<string>? EmoteRequested;
     public event Action<TargetBodyPart, CombatPanelAttackType, int, CombatPanelAttackQuality>? AttackRequested;
     public event Action<bool>? AttackSoundRequested;
+    public event Action<EntityUid, TargetBodyPart, CombatPanelTreatmentType, CombatPanelTreatmentQuality>? TreatmentRequested;
 
     public CombatPanelWindow()
     {
@@ -469,6 +474,102 @@ public sealed partial class CombatPanelWindow : BaseWindow
         MedicalEmptyLabel.Visible = !hasMedicalItems;
     }
 
+    /// <summary>
+    /// Supplies carried medical tools for target-directed treatment challenges.
+    /// The server still validates that the item belongs to the user.
+    /// </summary>
+    public void SetMedicalTreatmentItems(IEnumerable<(string Name, EntityUid Item, CombatPanelTreatmentType Type)> items)
+    {
+        MedicalItemsContainer.RemoveAllChildren();
+
+        foreach (var (name, item, type) in items)
+        {
+            var button = new CombatPanelButton
+            {
+                Text = type == CombatPanelTreatmentType.Bandage
+                    ? $"ПЕРЕВЯЗАТЬ // {name}"
+                    : $"ИНЪЕКЦИЯ // {name}",
+                HorizontalExpand = true,
+                ModulateSelfOverride = type == CombatPanelTreatmentType.Bandage
+                    ? new Color(220, 197, 157)
+                    : new Color(163, 195, 190),
+                Disabled = _remainingActions <= 0 || _target == null || _selectedPart == null,
+            };
+
+            button.OnPressed += _ =>
+            {
+                if (_remainingActions <= 0 || _target == null || _selectedPart == null)
+                    return;
+
+                var part = GetSelectedTreatmentPart();
+                if (part == null)
+                    return;
+
+                BeginTreatmentMiniGame(name, item, type, part.Value);
+            };
+
+            MedicalItemsContainer.AddChild(button);
+        }
+
+        var hasItems = MedicalItemsContainer.ChildCount > 0;
+        MedicalItemsContainer.Visible = hasItems;
+        MedicalEmptyLabel.Visible = !hasItems;
+    }
+
+    private TargetBodyPart? GetSelectedTreatmentPart()
+    {
+        return _selectedPart switch
+        {
+            "head" => TargetBodyPart.Head,
+            "chest" => TargetBodyPart.Chest,
+            "left arm" => TargetBodyPart.LeftArm,
+            "right arm" => TargetBodyPart.RightArm,
+            "left leg" => TargetBodyPart.LeftLeg,
+            "right leg" => TargetBodyPart.RightLeg,
+            _ => null,
+        };
+    }
+
+    private void BeginTreatmentMiniGame(
+        string itemName,
+        EntityUid item,
+        CombatPanelTreatmentType type,
+        TargetBodyPart part)
+    {
+        _pendingTreatmentItem = item;
+        _pendingTreatmentType = type;
+        _pendingTreatmentPart = part;
+        _pendingTreatmentName = itemName;
+        _pendingAttackMessage = $"медицинская процедура: {itemName}";
+        _miniGameActive = true;
+        _miniGameResolved = false;
+        _ringMiniGame = type == CombatPanelTreatmentType.Bandage;
+        _miniGameElapsed = 0f;
+        _barPosition = 0f;
+        _barForward = true;
+        _ringCompleted = 0;
+        _ringSuccesses = 0;
+        MiniGameContainer.Visible = true;
+        MiniGameVisualContainer.Visible = true;
+        _timingBar.Visible = !_ringMiniGame;
+        _timingRing.Visible = _ringMiniGame;
+        MiniGameTitleLabel.Text = type == CombatPanelTreatmentType.Bandage
+            ? "ПЕРЕВЯЗКА // ФИКСАЦИЯ БИНТА"
+            : "ИНЪЕКЦИЯ // ВВЕДЕНИЕ ПРЕПАРАТА";
+        MiniGameHintLabel.Text = type == CombatPanelTreatmentType.Bandage
+            ? "СОВМЕЩАЙТЕ МОМЕНТЫ НАТЯЖЕНИЯ И ОБОРАЧИВАЙТЕ ПОВЯЗКУ"
+            : "ЗАФИКСИРУЙТЕ МОМЕНТ ВВЕДЕНИЯ ПРЕПАРАТА";
+        MiniGameHitButton.Text = type == CombatPanelTreatmentType.Bandage
+            ? "ЗАФИКСИРОВАТЬ ВИТОК"
+            : "НАЖАТЬ ПЛУНЖЕР";
+        MiniGameStatusLabel.Text = "ПРОЦЕДУРА ГОТОВА";
+        MiniGameHitButton.Disabled = false;
+        PerformButton.Disabled = true;
+        _timingRing.Configure();
+        _timingRing.Reset();
+        _timingBar.MarkerPosition = 0f;
+    }
+
     public bool TryRequestEmote(string message)
     {
         if (_remainingActions <= 0 || EmoteRequested == null)
@@ -769,6 +870,24 @@ public sealed partial class CombatPanelWindow : BaseWindow
             "удачно" or "точно" => "GOOD // УСПЕШНО",
             _ => "MISS // ПРОМАХ",
         };
+        if (_pendingTreatmentItem is { } treatmentItem
+            && _pendingTreatmentType is { } treatmentType
+            && _pendingTreatmentPart is { } treatmentPart)
+        {
+            var treatmentQuality = quality switch
+            {
+                "идеально" or "точно" => CombatPanelTreatmentQuality.Perfect,
+                "удачно" => CombatPanelTreatmentQuality.Good,
+                _ => CombatPanelTreatmentQuality.Miss,
+            };
+
+            if (TreatmentRequested != null && treatmentQuality != CombatPanelTreatmentQuality.Miss)
+            {
+                TreatmentRequested.Invoke(treatmentItem, treatmentPart, treatmentType, treatmentQuality);
+                ConsumeTurn();
+            }
+        }
+
         if (_pendingAttackType is { } attackType && _pendingTargetPart is { } targetPart)
         {
             var attackQuality = quality switch
@@ -786,6 +905,10 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
         _pendingAttackType = null;
         _pendingTargetPart = null;
+        _pendingTreatmentItem = null;
+        _pendingTreatmentType = null;
+        _pendingTreatmentPart = null;
+        _pendingTreatmentName = null;
         UpdateTurnControls();
         UpdateSelection();
     }
