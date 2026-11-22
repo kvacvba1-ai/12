@@ -52,6 +52,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
         // Mouse input must pass through every layout/frame container so nested buttons
         // (including TabContainer's own tab buttons) can receive clicks.
         SetMousePassThrough(this);
+        ApplyIndustrialTypography(this);
+        PerformButton.StyleClasses.Add("CombatPrimary");
+        MiniGameHitButton.StyleClasses.Add("CombatPrimary");
         TabContainer.CurrentTab = 0;
         Resizable = true;
         MinSize = new Vector2(620, 660);
@@ -228,6 +231,23 @@ public sealed partial class CombatPanelWindow : BaseWindow
                 ? "Скрыть боеприпасы"
                 : "Показать боеприпасы";
         };
+    }
+
+    private static void ApplyIndustrialTypography(Control control)
+    {
+        if (control is Label label)
+        {
+            label.FontColorOverride = label.StyleClasses.Contains("LabelHeading")
+                ? new Color(229, 207, 160)
+                : label.StyleClasses.Contains("LabelBig")
+                    ? new Color(218, 188, 132)
+                    : label.StyleClasses.Contains("LabelSmall")
+                        ? new Color(169, 151, 116)
+                        : new Color(211, 198, 164);
+        }
+
+        foreach (var child in control.Children)
+            ApplyIndustrialTypography(child);
     }
 
     private static void SetMousePassThrough(Control control)
