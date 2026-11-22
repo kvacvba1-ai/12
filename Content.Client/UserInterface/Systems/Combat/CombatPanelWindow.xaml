@@ -4,7 +4,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <combat:CombatPanelWindow xmlns="https://spacestation14.io"
                           xmlns:combat="clr-namespace:Content.Client.UserInterface.Systems.Combat">
-    <PanelContainer Name="WindowFrame" HorizontalExpand="True" VerticalExpand="True">
+    <PanelContainer Name="ArmorStage" HorizontalExpand="True" VerticalExpand="True">
+      <PanelContainer Name="WindowFrame" Margin="34" HorizontalExpand="True" VerticalExpand="True">
         <BoxContainer Orientation="Vertical" SeparationOverride="0" HorizontalExpand="True" VerticalExpand="True">
             <PanelContainer Name="WindowHeader" HorizontalExpand="True">
                 <BoxContainer Orientation="Horizontal" SeparationOverride="6" Margin="8 5" HorizontalExpand="True">
@@ -124,5 +125,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 </PanelContainer>
             </BoxContainer>
         </BoxContainer>
+      </PanelContainer>
     </PanelContainer>
 </combat:CombatPanelWindow>
