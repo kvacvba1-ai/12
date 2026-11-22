@@ -32,6 +32,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
     private readonly Dictionary<Button, bool> _ammunitionButtonAvailability = new();
     private readonly TimingRingControl _timingRing = new();
     private readonly TimingBarControl _timingBar = new();
+    private readonly BandageWrapControl _bandageWrap = new();
     private bool _miniGameActive;
     private bool _miniGameResolved;
     private bool _ringMiniGame;
@@ -82,6 +83,20 @@ public sealed partial class CombatPanelWindow : BaseWindow
             MinimizeWindowButton.Text = WindowBody.Visible ? "—" : "＋";
         };
         _timingRing.MinSize = new Vector2(190, 190);
+        _bandageWrap.MinSize = new Vector2(280, 280);
+        _bandageWrap.HorizontalExpand = true;
+        _bandageWrap.VerticalExpand = true;
+        _bandageWrap.Visible = false;
+        MiniGameVisualContainer.AddChild(_bandageWrap);
+        _bandageWrap.ProgressChanged += progress =>
+        {
+            MiniGameStatusLabel.Text = $"НАМОТАНО БИНТА: {progress:P0}";
+        };
+        _bandageWrap.Completed += () =>
+        {
+            if (_miniGameActive && _pendingTreatmentType == CombatPanelTreatmentType.Bandage)
+                ResolveMiniGame();
+        };
         _timingBar.MinSize = new Vector2(300, 54);
         MiniGameVisualContainer.AddChild(_timingRing);
         MiniGameVisualContainer.AddChild(_timingBar);
@@ -578,22 +593,26 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _ringSuccesses = 0;
         MiniGameContainer.Visible = true;
         MiniGameVisualContainer.Visible = true;
-        _timingBar.Visible = !_ringMiniGame;
-        _timingRing.Visible = _ringMiniGame;
+        _timingBar.Visible = type == CombatPanelTreatmentType.Injection;
+        _timingRing.Visible = false;
+        _bandageWrap.Visible = type == CombatPanelTreatmentType.Bandage;
+        _bandageWrap.Reset();
+        MiniGameHitButton.Visible = type == CombatPanelTreatmentType.Injection;
         MiniGameTitleLabel.Text = type == CombatPanelTreatmentType.Bandage
             ? "ПЕРЕВЯЗКА // ФИКСАЦИЯ БИНТА"
             : "ИНЪЕКЦИЯ // ВВЕДЕНИЕ ПРЕПАРАТА";
         MiniGameHintLabel.Text = type == CombatPanelTreatmentType.Bandage
-            ? "СОВМЕЩАЙТЕ МОМЕНТЫ НАТЯЖЕНИЯ И ОБОРАЧИВАЙТЕ ПОВЯЗКУ"
+            ? "ЗАЖМИТЕ ЛКМ НА СКРУЧЕННОМ БИНТЕ И ВЕДИТЕ ЕГО ПО КРУГУ ПО ЧАСОВОЙ СТРЕЛКЕ"
             : "ЗАФИКСИРУЙТЕ МОМЕНТ ВВЕДЕНИЯ ПРЕПАРАТА";
-        MiniGameHitButton.Text = type == CombatPanelTreatmentType.Bandage
-            ? "ЗАФИКСИРОВАТЬ ВИТОК"
-            : "НАЖАТЬ ПЛУНЖЕР";
+        MiniGameHitButton.Text = "НАЖАТЬ ПЛУНЖЕР";
         MiniGameStatusLabel.Text = "ПРОЦЕДУРА ГОТОВА";
         MiniGameHitButton.Disabled = false;
         PerformButton.Disabled = true;
-        _timingRing.Configure();
-        _timingRing.Reset();
+        if (type == CombatPanelTreatmentType.Injection)
+        {
+            _timingRing.Configure();
+            _timingRing.Reset();
+        }
         _timingBar.MarkerPosition = 0f;
         if (_target is { } target)
             TreatmentStageRequested?.Invoke(target, item, part, type, CombatPanelTreatmentStage.Begin);
@@ -803,7 +822,11 @@ public sealed partial class CombatPanelWindow : BaseWindow
             return;
 
         _miniGameElapsed += args.DeltaSeconds;
-        if (_ringMiniGame)
+        if (_pendingTreatmentType == CombatPanelTreatmentType.Bandage)
+        {
+            // The wrap control advances only from actual clockwise pointer movement.
+        }
+        else if (_ringMiniGame)
         {
             if (_timingRing.Advance(args.DeltaSeconds))
             {
@@ -892,7 +915,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
         var quality = "неудачно";
         if (!forceMiss)
         {
-            if (_ringMiniGame)
+            if (_pendingTreatmentType == CombatPanelTreatmentType.Bandage)
+                quality = "идеально";
+            else if (_ringMiniGame)
             {
                 var successes = _ringSuccesses;
                 quality = successes == RingAttemptsPerAttack ? "точно" : successes > 0 ? "удачно" : "мимо";
@@ -918,6 +943,8 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _miniGameActive = false;
         _miniGameResolved = true;
         _pendingAttackMessage = null;
+        _bandageWrap.Visible = false;
+        MiniGameHitButton.Visible = true;
         MiniGameHitButton.Text = "ПРОДОЛЖИТЬ";
         MiniGameHitButton.Disabled = false;
         MiniGameStatusLabel.Text = quality switch
