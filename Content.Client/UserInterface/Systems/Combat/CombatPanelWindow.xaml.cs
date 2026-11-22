@@ -67,123 +67,54 @@ public sealed partial class CombatPanelWindow : BaseWindow
         MiniGameVisualContainer.AddChild(_timingBar);
         _timingRing.Visible = false;
         _timingBar.Visible = false;
-        // TRENCHFACE is built as layered gunmetal plates, not a flat yellow outline.
-        // Each surface has its own finish so the interface reads like assembled field hardware.
+        var steelFrame = new StyleBoxPanel
+        {
+            BackgroundColor = new Color(25, 23, 21),
+            BorderColor = new Color(126, 75, 49),
+            InnerBorderColor = new Color(65, 49, 40),
+            HighlightColor = new Color(174, 126, 83),
+            BorderThickness = new Thickness(3),
+            CornerRadius = 13f,
+        };
+        // The custom BaseWindow root gets its own frame; no stock window chrome.
         WindowFrame.PanelOverride = new StyleBoxPanel
         {
-            BackgroundColor = new Color(19, 24, 25),
-            BorderColor = new Color(112, 119, 111),
-            InnerBorderColor = new Color(42, 49, 48),
-            HighlightColor = new Color(190, 194, 177),
-            AccentColor = new Color(119, 35, 34),
-            RustColor = new Color(130, 61, 35),
-            ScratchColor = new Color(102, 111, 105),
-            BorderThickness = new Thickness(5),
-            CornerRadius = 17f,
-            RivetRadius = 3.2f,
-            ShowWear = true,
-            ShowBlood = true,
-        };
-
-        WindowHeader.PanelOverride = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(37, 43, 42),
-            BorderColor = new Color(133, 91, 61),
-            InnerBorderColor = new Color(54, 57, 51),
-            HighlightColor = new Color(208, 190, 151),
-            AccentColor = new Color(145, 43, 38),
-            RustColor = new Color(155, 75, 39),
-            BorderThickness = new Thickness(3),
-            CornerRadius = 12f,
+            BackgroundColor = new Color(12, 13, 14),
+            BorderColor = new Color(145, 91, 58),
+            InnerBorderColor = new Color(48, 39, 34),
+            HighlightColor = new Color(194, 143, 95),
+            AccentColor = new Color(133, 36, 35),
+            BorderThickness = new Thickness(4),
+            CornerRadius = 16f,
             RivetRadius = 3f,
-            ShowWear = true,
-            ShowBlood = true,
-            ShowHazardStripe = true,
         };
-
-        HeaderFrame.PanelOverride = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(34, 39, 38),
-            BorderColor = new Color(123, 91, 65),
-            InnerBorderColor = new Color(55, 55, 49),
-            HighlightColor = new Color(184, 171, 143),
-            AccentColor = new Color(132, 39, 37),
-            RustColor = new Color(145, 69, 39),
-            BorderThickness = new Thickness(3),
-            CornerRadius = 12f,
-            RivetRadius = 2.8f,
-            ShowWear = true,
-            ShowBlood = true,
-        };
-
         var insetFrame = new StyleBoxPanel
         {
-            BackgroundColor = new Color(25, 31, 32),
-            BorderColor = new Color(75, 86, 84),
-            InnerBorderColor = new Color(39, 47, 47),
-            HighlightColor = new Color(126, 139, 132),
-            AccentColor = new Color(102, 48, 39),
-            RustColor = new Color(112, 58, 38),
-            ScratchColor = new Color(82, 94, 90),
-            BorderThickness = new Thickness(2),
-            CornerRadius = 10f,
-            RivetRadius = 2f,
-            ShowRivets = true,
-            ShowAccent = true,
-            ShowWear = true,
-        };
-
-        var bloodFrame = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(34, 28, 28),
-            BorderColor = new Color(125, 68, 57),
-            InnerBorderColor = new Color(59, 43, 41),
-            HighlightColor = new Color(174, 135, 112),
-            AccentColor = new Color(145, 35, 39),
-            RustColor = new Color(139, 62, 39),
-            BloodColor = new Color(112, 20, 28),
-            BorderThickness = new Thickness(3),
-            CornerRadius = 11f,
-            RivetRadius = 2.7f,
-            ShowWear = true,
-            ShowBlood = true,
-        };
-
-        var actionFrame = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(30, 36, 36),
-            BorderColor = new Color(93, 101, 94),
-            InnerBorderColor = new Color(43, 49, 47),
-            HighlightColor = new Color(151, 157, 143),
-            AccentColor = new Color(125, 54, 38),
-            RustColor = new Color(132, 67, 40),
+            BackgroundColor = new Color(16, 17, 17),
+            BorderColor = new Color(91, 65, 51),
+            InnerBorderColor = new Color(55, 42, 35),
+            HighlightColor = new Color(133, 100, 73),
             BorderThickness = new Thickness(2),
             CornerRadius = 9f,
-            RivetRadius = 2f,
-            ShowWear = true,
-            ShowBlood = false,
+            ShowRivets = false,
+            ShowAccent = false,
         };
-
-        var turnFrame = new StyleBoxPanel
+        var bloodFrame = new StyleBoxPanel
         {
-            BackgroundColor = new Color(35, 40, 39),
-            BorderColor = new Color(117, 105, 85),
-            InnerBorderColor = new Color(49, 53, 49),
-            HighlightColor = new Color(181, 173, 147),
-            AccentColor = new Color(133, 43, 38),
-            RustColor = new Color(140, 69, 39),
+            BackgroundColor = new Color(31, 17, 17),
+            BorderColor = new Color(151, 48, 43),
+            InnerBorderColor = new Color(77, 37, 34),
+            HighlightColor = new Color(168, 91, 72),
+            AccentColor = new Color(116, 29, 31),
             BorderThickness = new Thickness(3),
             CornerRadius = 11f,
-            RivetRadius = 2.8f,
-            ShowWear = true,
-            ShowBlood = false,
-            ShowHazardStripe = true,
         };
-
-        ActionFrame.PanelOverride = actionFrame;
+        WindowHeader.PanelOverride = steelFrame;
+        HeaderFrame.PanelOverride = steelFrame;
+        ActionFrame.PanelOverride = insetFrame;
         TargetZoneFrame.PanelOverride = bloodFrame;
         MiniGameContainer.PanelOverride = bloodFrame;
-        TurnFrame.PanelOverride = turnFrame;
+        TurnFrame.PanelOverride = steelFrame;
         CombatTab.PanelOverride = insetFrame;
         StatusTab.PanelOverride = insetFrame;
         EquipmentTab.PanelOverride = insetFrame;
