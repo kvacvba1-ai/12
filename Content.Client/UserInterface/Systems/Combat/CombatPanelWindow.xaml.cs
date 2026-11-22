@@ -76,6 +76,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
         MiniGameVisualContainer.AddChild(_timingBar);
         _timingRing.Visible = false;
         _timingBar.Visible = false;
+        // The outer stage owns the large mechanical silhouette; the inner window stays clean.
+        ArmorStage.PanelOverride = new StyleBoxArmorChassis();
+
         // TRENCHFACE: keep the shell and title rail armored; leave the working
         // surface open and quiet instead of nesting decorative frames inside it.
         WindowFrame.PanelOverride = new StyleBoxPanel
