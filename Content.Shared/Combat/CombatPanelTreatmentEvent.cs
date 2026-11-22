@@ -20,10 +20,16 @@ public enum CombatPanelTreatmentQuality : byte
     Perfect,
 }
 
+[Serializable, NetSerializable]
+public enum CombatPanelTreatmentStage : byte
+{
+    Begin,
+    Hit,
+}
+
 /// <summary>
-/// Requests a treatment after the client-side interaction challenge.
-/// The server validates ownership and delegates the actual treatment to the
-/// native HealingSystem or InjectorSystem.
+/// Starts a server-timed medical challenge or reports a single interaction.
+/// Treatment quality is deliberately not accepted from the client.
 /// </summary>
 [Serializable, NetSerializable]
 public sealed class CombatPanelTreatmentEvent : EntityEventArgs
@@ -32,19 +38,19 @@ public sealed class CombatPanelTreatmentEvent : EntityEventArgs
     public NetEntity Item { get; }
     public TargetBodyPart Part { get; }
     public CombatPanelTreatmentType Treatment { get; }
-    public CombatPanelTreatmentQuality Quality { get; }
+    public CombatPanelTreatmentStage Stage { get; }
 
     public CombatPanelTreatmentEvent(
         NetEntity target,
         NetEntity item,
         TargetBodyPart part,
         CombatPanelTreatmentType treatment,
-        CombatPanelTreatmentQuality quality)
+        CombatPanelTreatmentStage stage)
     {
         Target = target;
         Item = item;
         Part = part;
         Treatment = treatment;
-        Quality = quality;
+        Stage = stage;
     }
 }
