@@ -518,9 +518,7 @@ public sealed class HealingSystem : EntitySystem
 
         return HasDamage(healing, (target, targetDamage)) ||
             TryComp<BodyComponent>(target, out var bodyComp) && // I'm paranoid, sorry.
-            (targetedPart is { } selectedPart
-                ? IsBodyDamaged((target, bodyComp), null, healing.Comp, selectedPart)
-                : IsBodyDamaged((target, bodyComp), user, healing.Comp)) ||
+            IsBodyDamaged((target, bodyComp), user, healing.Comp) ||
             healing.Comp.ModifyBloodLevel > 0 // Special case if healing item can restore lost blood...
                 && TryComp<BloodstreamComponent>(target, out var bloodstream)
                 && _solutionContainerSystem.ResolveSolution(target, bloodstream.BloodSolutionName, ref bloodstream.BloodSolution, out var bloodSolution)
