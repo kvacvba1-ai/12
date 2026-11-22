@@ -13,7 +13,7 @@ namespace Content.Client.UserInterface.Systems.Combat;
 /// </summary>
 public sealed class CombatPanelButton : Button
 {
-    protected internal override void Draw(DrawingHandleScreen handle)
+    protected override void Draw(DrawingHandleScreen handle)
     {
         base.Draw(handle);
 
