@@ -190,6 +190,21 @@ public sealed partial class InjectorSystem : EntitySystem
     }
     #endregion Events Handling
 
+    /// <summary>
+    /// Starts the native injector workflow for TRENCHFACE after its interaction
+    /// challenge has succeeded. Reagent validation, transfer amount, blockers,
+    /// bloodstream injection, reactions, sounds and logging stay in InjectorSystem.
+    /// </summary>
+    public bool TryInjectFromCombatPanel(EntityUid injector, EntityUid user, EntityUid target)
+    {
+        if (!TryComp<InjectorComponent>(injector, out var component)
+            || !_prototypeManager.Resolve(component.ActiveModeProtoId, out var mode)
+            || mode.Behavior is not (InjectorBehavior.Inject or InjectorBehavior.Dynamic))
+            return false;
+
+        return TryMobsDoAfter((injector, component), user, target);
+    }
+
     #region Mob Interaction
     /// <summary>
     /// Send informative pop-up messages and wait for a do-after to complete.
