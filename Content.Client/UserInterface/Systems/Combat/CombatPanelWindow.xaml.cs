@@ -677,8 +677,8 @@ internal sealed class TimingRingControl : Control
     private float _angle;
     private int _targetCount = TargetSectorCount;
     private int _targetIndex;
-    private const float RotationSpeed = MathF.PI * 0.7f;
-    private const float SectorHalfWidth = 0.34f;
+    private const float RotationSpeed = MathF.PI * 1.0f;
+    private const float SectorHalfWidth = 0.20f;
 
     public bool IsInTargetSector
     {
