@@ -25,6 +25,7 @@ public enum CombatPanelTreatmentStage : byte
 {
     Begin,
     Hit,
+    Cancel,
 }
 
 /// <summary>
