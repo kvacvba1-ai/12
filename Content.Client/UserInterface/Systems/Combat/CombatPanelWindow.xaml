@@ -73,6 +73,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                             <SpriteView Name="HealthDollView" SetSize="112 168" Visible="False" />
                             <Label Name="HealthAnalyzerLabel" Text="НЕТ ДАННЫХ О СОСТОЯНИИ" HorizontalExpand="True" />
                         </BoxContainer>
+                        <Label Name="BodyStatusLabel" Text="НЕТ ДАННЫХ О ПОВРЕЖДЕНИЯХ ПО ЧАСТЯМ ТЕЛА" StyleClasses="LabelSmall" />
                     </BoxContainer>
                 </ScrollContainer>
             </PanelContainer>
@@ -81,10 +82,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                     <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
                         <Label Text="МЕДИЦИНСКОЕ СНАРЯЖЕНИЕ" StyleClasses="LabelHeading" />
+                        <Label Name="MedicalEmptyLabel" Text="МЕДИЦИНСКИЕ СРЕДСТВА НЕ ОБНАРУЖЕНЫ" StyleClasses="LabelSmall" />
                         <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
                         <PanelContainer StyleClasses="LowDivider" />
                         <Label Text="БОЕПРИПАСЫ И РАСХОДНИКИ" StyleClasses="LabelHeading" />
                         <Button Name="AmmunitionToggleButton" Text="ПОКАЗАТЬ СНАРЯЖЕНИЕ" />
+                        <Label Name="AmmunitionEmptyLabel" Text="БОЕПРИПАСЫ И РАСХОДНИКИ НЕ ОБНАРУЖЕНЫ" StyleClasses="LabelSmall" />
                         <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
                     </BoxContainer>
                 </ScrollContainer>

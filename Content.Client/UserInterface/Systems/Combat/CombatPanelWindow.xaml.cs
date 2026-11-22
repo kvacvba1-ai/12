@@ -229,9 +229,10 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _weaponShots = Math.Clamp(shots, 1, 6);
     }
 
-    public void SetHealthAnalyzer(string status, string damage)
+    public void SetHealthAnalyzer(string status, string damage, string bodyDetails)
     {
         HealthAnalyzerLabel.Text = $"Состояние: {status}\nОбщие повреждения: {damage}";
+        BodyStatusLabel.Text = bodyDetails;
     }
 
     public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)
@@ -290,8 +291,10 @@ public sealed partial class CombatPanelWindow : BaseWindow
             AmmunitionContainer.AddChild(button);
         }
 
-        AmmunitionToggleButton.Disabled = AmmunitionContainer.ChildCount == 0;
-        if (AmmunitionContainer.ChildCount == 0)
+        var hasAmmunition = AmmunitionContainer.ChildCount > 0;
+        AmmunitionToggleButton.Disabled = !hasAmmunition;
+        AmmunitionEmptyLabel.Visible = !hasAmmunition;
+        if (!hasAmmunition)
             AmmunitionContainer.Visible = false;
 
         AmmunitionToggleButton.Text = AmmunitionContainer.Visible
@@ -324,7 +327,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
             MedicalItemsContainer.AddChild(button);
         }
 
-        MedicalItemsContainer.Visible = MedicalItemsContainer.ChildCount > 0;
+        var hasMedicalItems = MedicalItemsContainer.ChildCount > 0;
+        MedicalItemsContainer.Visible = hasMedicalItems;
+        MedicalEmptyLabel.Visible = !hasMedicalItems;
     }
 
     public bool TryRequestEmote(string message)
