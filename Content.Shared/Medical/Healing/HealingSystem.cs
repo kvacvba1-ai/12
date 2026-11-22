@@ -323,7 +323,6 @@ public sealed class HealingSystem : EntitySystem
             BreakOnDamage = true,
             NeedHand = false,
             BreakOnHandChange = false,
-            BlockDuplicate = true,
         });
     }
 
