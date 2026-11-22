@@ -23,6 +23,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
     private string? _selectedAction;
     private string? _selectedPart;
+    private TargetBodyPart? _selectedTreatmentPart;
     private EntityUid? _target;
     private string _targetName = "неизвестная цель";
     private string? _weaponName;
@@ -144,6 +145,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
         RightArmButton.OnPressed += _ => SelectPart("right arm");
         LeftLegButton.OnPressed += _ => SelectPart("left leg");
         RightLegButton.OnPressed += _ => SelectPart("right leg");
+
+        TreatmentHeadButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.Head);
+        TreatmentChestButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.Chest);
+        TreatmentLeftArmButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.LeftArm);
+        TreatmentRightArmButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.RightArm);
+        TreatmentLeftLegButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.LeftLeg);
+        TreatmentRightLegButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.RightLeg);
 
         PerformButton.OnPressed += _ => Perform();
         MiniGameHitButton.OnPressed += _ =>
@@ -274,6 +282,8 @@ public sealed partial class CombatPanelWindow : BaseWindow
         {
             _selectedAction = null;
             _selectedPart = null;
+            _selectedTreatmentPart = null;
+            UpdateTreatmentPartButtonHighlights();
             _remainingActions = MaxActionsPerTurn;
             _miniGameActive = false;
             _miniGameResolved = false;
@@ -497,14 +507,10 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
             button.OnPressed += _ =>
             {
-                if (_remainingActions <= 0 || _target == null || _selectedPart == null)
+                if (_remainingActions <= 0 || _target == null || _selectedTreatmentPart == null)
                     return;
 
-                var part = GetSelectedTreatmentPart();
-                if (part == null)
-                    return;
-
-                BeginTreatmentMiniGame(name, item, type, part.Value);
+                BeginTreatmentMiniGame(name, item, type, _selectedTreatmentPart.Value);
             };
 
             MedicalItemsContainer.AddChild(button);
@@ -515,18 +521,35 @@ public sealed partial class CombatPanelWindow : BaseWindow
         MedicalEmptyLabel.Visible = !hasItems;
     }
 
-    private TargetBodyPart? GetSelectedTreatmentPart()
+    private void SelectTreatmentPart(TargetBodyPart part)
     {
-        return _selectedPart switch
+        if (_remainingActions <= 0 || _miniGameActive || _miniGameResolved)
+            return;
+
+        _selectedTreatmentPart = part;
+        UpdateTreatmentPartButtonHighlights();
+        UpdateTurnControls();
+    }
+
+    private void UpdateTreatmentPartButtonHighlights()
+    {
+        var buttons = new[]
         {
-            "head" => TargetBodyPart.Head,
-            "chest" => TargetBodyPart.Chest,
-            "left arm" => TargetBodyPart.LeftArm,
-            "right arm" => TargetBodyPart.RightArm,
-            "left leg" => TargetBodyPart.LeftLeg,
-            "right leg" => TargetBodyPart.RightLeg,
-            _ => null,
+            (TreatmentHeadButton, TargetBodyPart.Head),
+            (TreatmentChestButton, TargetBodyPart.Chest),
+            (TreatmentLeftArmButton, TargetBodyPart.LeftArm),
+            (TreatmentRightArmButton, TargetBodyPart.RightArm),
+            (TreatmentLeftLegButton, TargetBodyPart.LeftLeg),
+            (TreatmentRightLegButton, TargetBodyPart.RightLeg),
         };
+
+        foreach (var (button, part) in buttons)
+        {
+            if (part == _selectedTreatmentPart)
+                button.StyleClasses.Add("positive");
+            else
+                button.StyleClasses.Remove("positive");
+        }
     }
 
     private void BeginTreatmentMiniGame(
@@ -630,6 +653,22 @@ public sealed partial class CombatPanelWindow : BaseWindow
         {
             if (child is Button button)
                 button.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
+        }
+
+        foreach (var child in TreatmentItemsContainer.Children)
+        {
+            if (child is Button button)
+                button.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved
+                    || _selectedTreatmentPart == null || _target == null;
+        }
+
+        foreach (var button in new[]
+        {
+            TreatmentHeadButton, TreatmentChestButton, TreatmentLeftArmButton,
+            TreatmentRightArmButton, TreatmentLeftLegButton, TreatmentRightLegButton,
+        })
+        {
+            button.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
         }
 
         foreach (var child in AmmunitionContainer.Children)
