@@ -88,9 +88,22 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                     <PanelContainer Name="EquipmentTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
                         <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
                             <BoxContainer Orientation="Vertical" SeparationOverride="5" Margin="7" HorizontalExpand="True">
-                                <Label Text="МЕДИЦИНСКОЕ СНАРЯЖЕНИЕ" StyleClasses="LabelHeading" />
+                                <Label Text="САМОЛЕЧЕНИЕ" StyleClasses="LabelHeading" />
                                 <Label Name="MedicalEmptyLabel" Text="СРЕДСТВА НЕ ОБНАРУЖЕНЫ" StyleClasses="LabelSmall" />
                                 <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
+                                <PanelContainer StyleClasses="LowDivider" />
+                                <Label Text="ЛЕЧЕНИЕ ЦЕЛИ" StyleClasses="LabelHeading" />
+                                <Label Text="ВЫБЕРИТЕ ОБЛАСТЬ ТЕЛА ДЛЯ ПРОЦЕДУРЫ" StyleClasses="LabelSmall" />
+                                <GridContainer Columns="3" HorizontalExpand="True">
+                                    <combat:CombatPanelButton Name="TreatmentHeadButton" Text="ГОЛОВА" />
+                                    <combat:CombatPanelButton Name="TreatmentChestButton" Text="КОРПУС" />
+                                    <combat:CombatPanelButton Name="TreatmentLeftArmButton" Text="ЛЕВАЯ РУКА" />
+                                    <combat:CombatPanelButton Name="TreatmentRightArmButton" Text="ПРАВАЯ РУКА" />
+                                    <combat:CombatPanelButton Name="TreatmentLeftLegButton" Text="ЛЕВАЯ НОГА" />
+                                    <combat:CombatPanelButton Name="TreatmentRightLegButton" Text="ПРАВАЯ НОГА" />
+                                </GridContainer>
+                                <Label Name="TreatmentEmptyLabel" Text="НЕТ ПЕРЕВЯЗОЧНЫХ МАТЕРИАЛОВ И ИНЪЕКТОРОВ" StyleClasses="LabelSmall" />
+                                <BoxContainer Name="TreatmentItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
                                 <PanelContainer StyleClasses="LowDivider" />
                                 <Label Text="БОЕПРИПАСЫ" StyleClasses="LabelHeading" />
                                 <combat:CombatPanelButton Name="AmmunitionToggleButton" Text="ПОКАЗАТЬ" />
