@@ -118,6 +118,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
             ShowAccent = true,
         };
 
+        // Inner controls use the same layered metal/glass language as the outer chassis.
+        ApplyArmorSurface(HeaderFrame, new Color(34, 38, 37), new Color(143, 117, 83), 3, true);
+        ApplyArmorSurface(ActionFrame, new Color(27, 31, 31), new Color(104, 111, 101), 2, true);
+        ApplyArmorSurface(TargetZoneFrame, new Color(31, 34, 33), new Color(130, 91, 67), 2, true);
+        ApplyArmorSurface(MiniGameContainer, new Color(22, 25, 25), new Color(146, 111, 72), 3, true);
+        ApplyArmorSurface(TurnFrame, new Color(31, 35, 34), new Color(107, 112, 99), 2, false);
+
         TabContainer.SetTabTitle(CombatTab, "Бой");
         TabContainer.SetTabTitle(StatusTab, "Тело");
         TabContainer.SetTabTitle(EquipmentTab, "Снаряга");
@@ -158,6 +165,30 @@ public sealed partial class CombatPanelWindow : BaseWindow
             AmmunitionToggleButton.Text = AmmunitionContainer.Visible
                 ? "Скрыть боеприпасы"
                 : "Показать боеприпасы";
+        };
+    }
+
+    private static void ApplyArmorSurface(
+        PanelContainer panel,
+        Color background,
+        Color border,
+        float thickness,
+        bool rivets)
+    {
+        panel.PanelOverride = new StyleBoxPanel
+        {
+            BackgroundColor = background,
+            BorderColor = border,
+            InnerBorderColor = new Color(43, 46, 42),
+            HighlightColor = new Color(190, 169, 126),
+            AccentColor = new Color(126, 39, 34),
+            RustColor = new Color(130, 61, 35),
+            BorderThickness = new Thickness(thickness),
+            CornerRadius = 7f,
+            RivetRadius = 2f,
+            ShowRivets = rivets,
+            ShowAccent = true,
+            ShowWear = true,
         };
     }
 
