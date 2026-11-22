@@ -167,6 +167,24 @@ namespace Content.Client.Hands.Systems
         }
 
         /// <summary>
+        /// Requests normal in-hand use for an item in the specified hand.
+        /// The request is sent through the same predictive network events as the hands UI.
+        /// </summary>
+        public bool RequestUseItemInHand(EntityUid user, string handName)
+        {
+            if (!TryGetPlayerHands(out var hands)
+                || hands.Value.Owner != user
+                || !TryGetHeldItem(hands.Value.AsNullable(), handName, out _))
+                return false;
+
+            if (hands.Value.Comp.ActiveHandId != handName)
+                RaisePredictiveEvent(new RequestSetHandEvent(handName));
+
+            RaisePredictiveEvent(new RequestUseInHandEvent());
+            return true;
+        }
+
+        /// <summary>
         ///     Called when a user clicks on the little "activation" icon in the hands GUI. This is currently only used
         ///     by storage (backpacks, etc).
         /// </summary>
