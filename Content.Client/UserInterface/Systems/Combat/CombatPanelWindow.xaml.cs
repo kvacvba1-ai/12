@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Client.UserInterface.Controls;
+using Content.Shared._Shitmed.Targeting;
+using Content.Shared.Combat;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
@@ -34,6 +36,8 @@ public sealed partial class CombatPanelWindow : BaseWindow
     private bool _ringMiniGame;
     private float _miniGameElapsed;
     private string? _pendingAttackMessage;
+    private CombatPanelAttackType? _pendingAttackType;
+    private TargetBodyPart? _pendingTargetPart;
     private float _barPosition;
     private bool _barForward = true;
     private int _weaponShots = 1;
@@ -45,6 +49,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
     public bool IsIncoming => _isIncoming;
 
     public event Action<string>? EmoteRequested;
+    public event Action<TargetBodyPart, CombatPanelAttackType, int, CombatPanelAttackQuality>? AttackRequested;
     public event Action<bool>? AttackSoundRequested;
 
     public CombatPanelWindow()
@@ -236,6 +241,8 @@ public sealed partial class CombatPanelWindow : BaseWindow
             _miniGameActive = false;
             _miniGameResolved = false;
             _pendingAttackMessage = null;
+            _pendingAttackType = null;
+            _pendingTargetPart = null;
             MiniGameContainer.Visible = false;
             TargetZoneFrame.Visible = false;
         }
@@ -420,6 +427,22 @@ public sealed partial class CombatPanelWindow : BaseWindow
         if (_remainingActions <= 0 || EmoteRequested == null)
             return false;
 
+        EmoteRequested.Invoke(message);
+        ConsumeTurn();
+        return true;
+    }
+
+    private bool TryRequestAttack(
+        string message,
+        TargetBodyPart targetPart,
+        CombatPanelAttackType attackType,
+        int successfulHits,
+        CombatPanelAttackQuality quality)
+    {
+        if (_remainingActions <= 0 || _target == null || EmoteRequested == null || AttackRequested == null)
+            return false;
+
+        AttackRequested.Invoke(targetPart, attackType, successfulHits, quality);
         EmoteRequested.Invoke(message);
         ConsumeTurn();
         return true;
@@ -699,14 +722,30 @@ public sealed partial class CombatPanelWindow : BaseWindow
             "удачно" or "точно" => "GOOD // УСПЕШНО",
             _ => "MISS // ПРОМАХ",
         };
-        TryRequestEmote(message);
+        if (_pendingAttackType is { } attackType && _pendingTargetPart is { } targetPart)
+        {
+            var attackQuality = quality switch
+            {
+                "идеально" => CombatPanelAttackQuality.Perfect,
+                "удачно" or "точно" => CombatPanelAttackQuality.Good,
+                _ => CombatPanelAttackQuality.Miss,
+            };
+            var successfulHits = _ringMiniGame
+                ? _ringSuccesses
+                : attackQuality == CombatPanelAttackQuality.Miss ? 0 : 1;
+
+            TryRequestAttack(message, targetPart, attackType, successfulHits, attackQuality);
+        }
+
+        _pendingAttackType = null;
+        _pendingTargetPart = null;
         UpdateTurnControls();
         UpdateSelection();
     }
 
     private void Perform()
     {
-        if (_selectedAction == null || _selectedPart == null || _remainingActions <= 0)
+        if (_selectedAction == null || _selectedPart == null || _remainingActions <= 0 || _target == null)
             return;
 
         var part = GetPartLabel(_selectedPart);
@@ -724,12 +763,44 @@ public sealed partial class CombatPanelWindow : BaseWindow
         if (message == null)
             return;
 
+        _pendingTargetPart = _selectedPart switch
+        {
+            "head" => TargetBodyPart.Head,
+            "chest" => TargetBodyPart.Chest,
+            "left arm" => TargetBodyPart.LeftArm,
+            "right arm" => TargetBodyPart.RightArm,
+            "left leg" => TargetBodyPart.LeftLeg,
+            "right leg" => TargetBodyPart.RightLeg,
+            _ => null,
+        };
+
+        _pendingAttackType = _selectedAction switch
+        {
+            "shoots" => CombatPanelAttackType.Shoot,
+            "stabs" => CombatPanelAttackType.Stab,
+            "punches" => CombatPanelAttackType.Punch,
+            "kicks" => CombatPanelAttackType.Kick,
+            _ => null,
+        };
+
+        if (_pendingTargetPart == null || _pendingAttackType == null)
+            return;
+
         if (_selectedAction is "shoots" or "stabs")
         {
             BeginMiniGame(message, radial: _selectedAction == "shoots");
         }
         else
-            TryRequestEmote(message);
+        {
+            TryRequestAttack(
+                message,
+                _pendingTargetPart.Value,
+                _pendingAttackType.Value,
+                1,
+                CombatPanelAttackQuality.Good);
+            _pendingTargetPart = null;
+            _pendingAttackType = null;
+        }
     }
 }
 
