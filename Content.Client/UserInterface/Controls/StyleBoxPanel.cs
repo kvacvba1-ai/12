@@ -161,6 +161,56 @@ public sealed class StyleBoxPanel : StyleBox
             handle.DrawLine(start, end, ScratchColor);
         }
 
+        // Dense hand-worked abrasion: paired gouges with dark cut edges and exposed steel.
+        var deepScratches = new (float X, float Y, float L, float S)[] 
+        {
+            (0.16f, 0.16f, 0.17f, 0.012f), (0.162f, 0.164f, 0.13f, 0.010f),
+            (0.67f, 0.23f, 0.21f, -0.018f), (0.672f, 0.236f, 0.16f, -0.015f),
+            (0.28f, 0.61f, 0.12f, 0.025f), (0.282f, 0.616f, 0.09f, 0.021f),
+            (0.74f, 0.78f, 0.15f, -0.022f), (0.742f, 0.786f, 0.11f, -0.018f),
+            (0.48f, 0.91f, 0.08f, 0.008f), (0.482f, 0.914f, 0.06f, 0.006f),
+        };
+
+        foreach (var scratch in deepScratches)
+        {
+            var start = new Vector2(box.Left + w * scratch.X, box.Top + h * scratch.Y);
+            var end = start + new Vector2(w * scratch.L, h * scratch.S);
+            handle.DrawLine(start + new Vector2(0f, 1.4f * scale),
+                end + new Vector2(0f, 1.4f * scale), new Color(11, 15, 15));
+            handle.DrawLine(start, end, new Color(164, 157, 132));
+        }
+
+        // Heat-tinted weld beads and oxidized weld spatter along the plate seams.
+        for (var i = 0; i < 26; i++)
+        {
+            var t = (i + 0.5f) / 26f;
+            var x = box.Left + w * (0.08f + t * 0.84f);
+            var y = i % 2 == 0 ? box.Top + h * 0.055f : box.Bottom - h * 0.055f;
+            var bead = new Vector2(x, y);
+            handle.DrawLine(bead, bead + new Vector2(3.5f * scale, 0f),
+                i % 3 == 0 ? new Color(122, 72, 48) : new Color(91, 101, 96));
+            if (i % 3 == 0)
+                handle.DrawCircle(bead + new Vector2(1.5f, 1.5f) * scale,
+                    1.15f * scale, new Color(145, 69, 39), true);
+        }
+
+        // Small impact dents: a dark crater, a cold-metal rim and a tiny bright catchlight.
+        var dents = new (float X, float Y, float R)[]
+        {
+            (0.24f, 0.12f, 2.4f), (0.56f, 0.18f, 1.7f), (0.88f, 0.39f, 2.1f),
+            (0.09f, 0.53f, 1.8f), (0.39f, 0.73f, 2.2f), (0.82f, 0.88f, 2.5f),
+        };
+        foreach (var dent in dents)
+        {
+            var point = new Vector2(box.Left + w * dent.X, box.Top + h * dent.Y);
+            handle.DrawCircle(point, dent.R * scale, new Color(12, 16, 16), true);
+            handle.DrawCircle(point + new Vector2(-0.45f, -0.45f) * scale,
+                dent.R * 0.58f * scale, new Color(82, 89, 83), true);
+            handle.DrawLine(point + new Vector2(-dent.R, -dent.R) * scale,
+                point + new Vector2(-0.5f, -dent.R * 0.45f) * scale,
+                new Color(178, 166, 135));
+        }
+
         // Corrosion blooms collect near seams and fasteners.
         for (var i = 0; i < 18; i++)
         {
