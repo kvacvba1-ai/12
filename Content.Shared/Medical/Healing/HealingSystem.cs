@@ -292,6 +292,32 @@ public sealed class HealingSystem : EntitySystem
         return false;
     }
 
+    /// <summary>
+    /// Starts the ordinary HealingSystem workflow for a specific body part selected
+    /// in TRENCHFACE. Compatibility checks, range, delay, sounds, wound handling,
+    /// blood-loss treatment and item consumption remain in the native healing path.
+    /// </summary>
+    public bool TryHealFromCombatPanel(EntityUid user, EntityUid target, EntityUid usedItem, TargetBodyPart part)
+    {
+        if (!TryComp<BodyComponent>(target, out var body)
+            || !TryComp<HealingComponent>(usedItem, out var healing)
+            || !TryComp<DamageableComponent>(target, out var damageable))
+            return false;
+
+        var (partType, symmetry) = _bodySystem.ConvertTargetBodyPart(part);
+        var selectedPart = _bodySystem.GetBodyChildrenOfType(target, partType, body, symmetry)
+            .FirstOrNull();
+
+        if (selectedPart == null || !TryComp<DamageableComponent>(selectedPart.Value.Id, out _))
+            return false;
+
+        return TryHeal(
+            (usedItem, healing),
+            (target, (DamageableComponent?) damageable),
+            user,
+            selectedPart.Value.Id);
+    }
+
     private void OnBodyDoAfter(EntityUid ent, BodyComponent comp, ref HealingDoAfterEvent args)
     {
         var dontRepeat = false;
@@ -302,8 +328,9 @@ public sealed class HealingSystem : EntitySystem
         if (args.Handled || args.Cancelled)
             return;
 
-        var targetedWoundable = EntityUid.Invalid;
-        if (TryComp<TargetingComponent>(args.User, out var targeting))
+        var targetedWoundable = args.TargetedPart ?? EntityUid.Invalid;
+        if (targetedWoundable == EntityUid.Invalid
+            && TryComp<TargetingComponent>(args.User, out var targeting))
         {
             var (partType, symmetry) = _bodySystem.ConvertTargetBodyPart(targeting.Target);
             var targetedBodyPart = _bodySystem.GetBodyChildrenOfType(ent, partType, comp, symmetry).ToList().FirstOrDefault();
@@ -491,7 +518,9 @@ public sealed class HealingSystem : EntitySystem
 
         return HasDamage(healing, (target, targetDamage)) ||
             TryComp<BodyComponent>(target, out var bodyComp) && // I'm paranoid, sorry.
-            IsBodyDamaged((target, bodyComp), user, healing.Comp) ||
+            (targetedPart is { } selectedPart
+                ? IsBodyDamaged((target, bodyComp), null, healing.Comp, selectedPart)
+                : IsBodyDamaged((target, bodyComp), user, healing.Comp)) ||
             healing.Comp.ModifyBloodLevel > 0 // Special case if healing item can restore lost blood...
                 && TryComp<BloodstreamComponent>(target, out var bloodstream)
                 && _solutionContainerSystem.ResolveSolution(target, bloodstream.BloodSolutionName, ref bloodstream.BloodSolution, out var bloodSolution)
@@ -499,7 +528,7 @@ public sealed class HealingSystem : EntitySystem
     }
     // Goobstation end
 
-    private bool TryHeal(Entity<HealingComponent> healing, Entity<DamageableComponent?> target, EntityUid user)
+    private bool TryHeal(Entity<HealingComponent> healing, Entity<DamageableComponent?> target, EntityUid user, EntityUid? targetedPart = null)
     {
         if (!Resolve(target, ref target.Comp, false))
             return false;
@@ -521,7 +550,9 @@ public sealed class HealingSystem : EntitySystem
         var anythingToDo =
             HasDamage(healing, (target.Owner, target.Comp)) ||
             TryComp<BodyComponent>(target, out var bodyComp) && // I'm paranoid, sorry.
-            IsBodyDamaged((target, bodyComp), user, healing.Comp) ||
+            (targetedPart is { } selectedPart
+                ? IsBodyDamaged((target, bodyComp), null, healing.Comp, selectedPart)
+                : IsBodyDamaged((target, bodyComp), user, healing.Comp)) ||
             healing.Comp.ModifyBloodLevel < 0 // Special case if healing item can restore lost blood... Goobstation edit
                 && TryComp<BloodstreamComponent>(target, out var bloodstream)
                 && _solutionContainerSystem.ResolveSolution(target.Owner, bloodstream.BloodSolutionName, ref bloodstream.BloodSolution, out var bloodSolution)
@@ -555,11 +586,11 @@ public sealed class HealingSystem : EntitySystem
         _audio.PlayPredicted(healing.Comp.HealingBeginSound, target, user);
 
         var doAfterEventArgs =
-            new DoAfterArgs(EntityManager, user, delay, new HealingDoAfterEvent(), target, target: target, used: healing)
+            new DoAfterArgs(EntityManager, user, delay, new HealingDoAfterEvent(targetedPart), target, target: target, used: healing)
             {
                 // Didn't break on damage as they may be trying to prevent it and
                 // not being able to heal your own ticking damage would be frustrating.
-                NeedHand = true,
+                NeedHand = targetedPart == null,
                 BreakOnMove = true,
                 BreakOnWeightlessMove = false
             };

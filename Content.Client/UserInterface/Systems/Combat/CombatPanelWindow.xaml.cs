@@ -23,6 +23,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
     private string? _selectedAction;
     private string? _selectedPart;
+    private TargetBodyPart? _selectedTreatmentPart;
     private EntityUid? _target;
     private string _targetName = "неизвестная цель";
     private string? _weaponName;
@@ -38,6 +39,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
     private string? _pendingAttackMessage;
     private CombatPanelAttackType? _pendingAttackType;
     private TargetBodyPart? _pendingTargetPart;
+    private EntityUid? _pendingTreatmentItem;
+    private CombatPanelTreatmentType? _pendingTreatmentType;
+    private TargetBodyPart? _pendingTreatmentPart;
     private float _barPosition;
     private bool _barForward = true;
     private int _weaponShots = 1;
@@ -51,6 +55,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
     public event Action<string>? EmoteRequested;
     public event Action<TargetBodyPart, CombatPanelAttackType, int, CombatPanelAttackQuality>? AttackRequested;
     public event Action<bool>? AttackSoundRequested;
+    public event Action<EntityUid, EntityUid, TargetBodyPart, CombatPanelTreatmentType, CombatPanelTreatmentQuality>? TreatmentRequested;
 
     public CombatPanelWindow()
     {
@@ -63,12 +68,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
         MiniGameHitButton.StyleClasses.Add("CombatPrimary");
         TabContainer.CurrentTab = 0;
         TabContainer.TabsVisible = false;
+        ApplyTabVisibility(0);
         CombatNavActionsButton.OnPressed += _ => SelectTab(0);
         CombatNavStatusButton.OnPressed += _ => SelectTab(1);
         CombatNavEquipmentButton.OnPressed += _ => SelectTab(2);
         UpdateTabNavigation();
         Resizable = true;
-        MinSize = new Vector2(540, 560);
+        MinSize = new Vector2(560, 600);
         CloseWindowButton.OnPressed += _ => Close();
         MinimizeWindowButton.OnPressed += _ =>
         {
@@ -117,6 +123,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
             ShowAccent = true,
         };
 
+        // Inner controls use the same layered metal/glass language as the outer chassis.
+        ApplyArmorSurface(HeaderFrame, new Color(34, 38, 37), new Color(143, 117, 83), 3, true);
+        ApplyArmorSurface(ActionFrame, new Color(27, 31, 31), new Color(104, 111, 101), 2, true);
+        ApplyArmorSurface(TargetZoneFrame, new Color(31, 34, 33), new Color(130, 91, 67), 2, true);
+        ApplyArmorSurface(MiniGameContainer, new Color(22, 25, 25), new Color(146, 111, 72), 3, true);
+        ApplyArmorSurface(TurnFrame, new Color(31, 35, 34), new Color(107, 112, 99), 2, false);
+
         TabContainer.SetTabTitle(CombatTab, "Бой");
         TabContainer.SetTabTitle(StatusTab, "Тело");
         TabContainer.SetTabTitle(EquipmentTab, "Снаряга");
@@ -132,6 +145,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
         RightArmButton.OnPressed += _ => SelectPart("right arm");
         LeftLegButton.OnPressed += _ => SelectPart("left leg");
         RightLegButton.OnPressed += _ => SelectPart("right leg");
+
+        TreatmentHeadButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.Head);
+        TreatmentChestButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.Chest);
+        TreatmentLeftArmButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.LeftArm);
+        TreatmentRightArmButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.RightArm);
+        TreatmentLeftLegButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.LeftLeg);
+        TreatmentRightLegButton.OnPressed += _ => SelectTreatmentPart(TargetBodyPart.RightLeg);
 
         PerformButton.OnPressed += _ => Perform();
         MiniGameHitButton.OnPressed += _ =>
@@ -157,6 +177,30 @@ public sealed partial class CombatPanelWindow : BaseWindow
             AmmunitionToggleButton.Text = AmmunitionContainer.Visible
                 ? "Скрыть боеприпасы"
                 : "Показать боеприпасы";
+        };
+    }
+
+    private static void ApplyArmorSurface(
+        PanelContainer panel,
+        Color background,
+        Color border,
+        float thickness,
+        bool rivets)
+    {
+        panel.PanelOverride = new StyleBoxPanel
+        {
+            BackgroundColor = background,
+            BorderColor = border,
+            InnerBorderColor = new Color(43, 46, 42),
+            HighlightColor = new Color(190, 169, 126),
+            AccentColor = new Color(126, 39, 34),
+            RustColor = new Color(130, 61, 35),
+            BorderThickness = new Thickness(thickness),
+            CornerRadius = 7f,
+            RivetRadius = 2f,
+            ShowRivets = rivets,
+            ShowAccent = true,
+            ShowWear = true,
         };
     }
 
@@ -192,8 +236,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
     // Keep the close-button corner outside the drag region so its click remains unambiguous.
     protected override DragMode GetDragModeFor(Vector2 relativeMousePos)
     {
-        const float edge = 7f;
-        const float headerHeight = 54f;
+        // A wider hit target makes resizing practical on touchpads and high-DPI displays.
+        const float edge = 14f;
+        const float headerHeight = 58f;
 
         var mode = DragMode.None;
         if (relativeMousePos.Y < edge)
@@ -237,12 +282,17 @@ public sealed partial class CombatPanelWindow : BaseWindow
         {
             _selectedAction = null;
             _selectedPart = null;
+            _selectedTreatmentPart = null;
+            UpdateTreatmentPartButtonHighlights();
             _remainingActions = MaxActionsPerTurn;
             _miniGameActive = false;
             _miniGameResolved = false;
             _pendingAttackMessage = null;
             _pendingAttackType = null;
             _pendingTargetPart = null;
+            _pendingTreatmentItem = null;
+            _pendingTreatmentType = null;
+            _pendingTreatmentPart = null;
             MiniGameContainer.Visible = false;
             TargetZoneFrame.Visible = false;
         }
@@ -301,8 +351,22 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
     private void SelectTab(int index)
     {
+        index = Math.Clamp(index, 0, 2);
         TabContainer.CurrentTab = index;
+        ApplyTabVisibility(index);
         UpdateTabNavigation();
+    }
+
+    /// <summary>
+    /// The custom navigation rail replaces TabContainer's built-in tabs.
+    /// Explicit visibility prevents inactive pages from bleeding through
+    /// when the container is resized or its children are re-laid out.
+    /// </summary>
+    private void ApplyTabVisibility(int index)
+    {
+        CombatTab.Visible = index == 0;
+        StatusTab.Visible = index == 1;
+        EquipmentTab.Visible = index == 2;
     }
 
     private void UpdateTabNavigation()
@@ -422,6 +486,115 @@ public sealed partial class CombatPanelWindow : BaseWindow
         MedicalEmptyLabel.Visible = !hasMedicalItems;
     }
 
+    /// <summary>
+    /// Supplies carried medical tools for target-directed treatment challenges.
+    /// The server still validates that the item belongs to the user.
+    /// </summary>
+    public void SetMedicalTreatmentItems(IEnumerable<(string Name, EntityUid Item, CombatPanelTreatmentType Type)> items)
+    {
+        TreatmentItemsContainer.RemoveAllChildren();
+
+        foreach (var (name, item, type) in items)
+        {
+            var button = new CombatPanelButton
+            {
+                Text = type == CombatPanelTreatmentType.Bandage
+                    ? $"ПЕРЕВЯЗАТЬ // {name}"
+                    : $"ИНЪЕКЦИЯ // {name}",
+                HorizontalExpand = true,
+                ModulateSelfOverride = type == CombatPanelTreatmentType.Bandage
+                    ? new Color(220, 197, 157)
+                    : new Color(163, 195, 190),
+                Disabled = _remainingActions <= 0 || _target == null || _selectedTreatmentPart == null,
+            };
+
+            button.OnPressed += _ =>
+            {
+                if (_remainingActions <= 0 || _target == null || _selectedTreatmentPart == null)
+                    return;
+
+                BeginTreatmentMiniGame(name, item, type, _selectedTreatmentPart.Value);
+            };
+
+            TreatmentItemsContainer.AddChild(button);
+        }
+
+        var hasItems = TreatmentItemsContainer.ChildCount > 0;
+        TreatmentItemsContainer.Visible = hasItems;
+        TreatmentEmptyLabel.Visible = !hasItems;
+        UpdateTurnControls();
+    }
+
+    private void SelectTreatmentPart(TargetBodyPart part)
+    {
+        if (_remainingActions <= 0 || _miniGameActive || _miniGameResolved)
+            return;
+
+        _selectedTreatmentPart = part;
+        UpdateTreatmentPartButtonHighlights();
+        UpdateTurnControls();
+    }
+
+    private void UpdateTreatmentPartButtonHighlights()
+    {
+        var buttons = new[]
+        {
+            (TreatmentHeadButton, TargetBodyPart.Head),
+            (TreatmentChestButton, TargetBodyPart.Chest),
+            (TreatmentLeftArmButton, TargetBodyPart.LeftArm),
+            (TreatmentRightArmButton, TargetBodyPart.RightArm),
+            (TreatmentLeftLegButton, TargetBodyPart.LeftLeg),
+            (TreatmentRightLegButton, TargetBodyPart.RightLeg),
+        };
+
+        foreach (var (button, part) in buttons)
+        {
+            if (part == _selectedTreatmentPart)
+                button.StyleClasses.Add("positive");
+            else
+                button.StyleClasses.Remove("positive");
+        }
+    }
+
+    private void BeginTreatmentMiniGame(
+        string itemName,
+        EntityUid item,
+        CombatPanelTreatmentType type,
+        TargetBodyPart part)
+    {
+        _pendingTreatmentItem = item;
+        _pendingTreatmentType = type;
+        _pendingTreatmentPart = part;
+        _pendingAttackMessage = $"медицинская процедура: {itemName}";
+        _miniGameActive = true;
+        _miniGameResolved = false;
+        _ringMiniGame = type == CombatPanelTreatmentType.Bandage;
+        _miniGameElapsed = 0f;
+        _barPosition = 0f;
+        _barForward = true;
+        _ringCompleted = 0;
+        _ringSuccesses = 0;
+        MiniGameContainer.Visible = true;
+        MiniGameVisualContainer.Visible = true;
+        _timingBar.Visible = !_ringMiniGame;
+        _timingRing.Visible = _ringMiniGame;
+        MiniGameTitleLabel.Text = type == CombatPanelTreatmentType.Bandage
+            ? "ПЕРЕВЯЗКА // ФИКСАЦИЯ БИНТА"
+            : "ИНЪЕКЦИЯ // ВВЕДЕНИЕ ПРЕПАРАТА";
+        MiniGameHintLabel.Text = type == CombatPanelTreatmentType.Bandage
+            ? "СОВМЕЩАЙТЕ МОМЕНТЫ НАТЯЖЕНИЯ И ОБОРАЧИВАЙТЕ ПОВЯЗКУ"
+            : "ЗАФИКСИРУЙТЕ МОМЕНТ ВВЕДЕНИЯ ПРЕПАРАТА";
+        MiniGameHitButton.Text = type == CombatPanelTreatmentType.Bandage
+            ? "ЗАФИКСИРОВАТЬ ВИТОК"
+            : "НАЖАТЬ ПЛУНЖЕР";
+        MiniGameStatusLabel.Text = "ПРОЦЕДУРА ГОТОВА";
+        MiniGameHitButton.Disabled = false;
+        PerformButton.Disabled = true;
+        _timingRing.Configure();
+        _timingRing.Reset();
+        _timingBar.MarkerPosition = 0f;
+    }
+
     public bool TryRequestEmote(string message)
     {
         if (_remainingActions <= 0 || EmoteRequested == null)
@@ -484,6 +657,22 @@ public sealed partial class CombatPanelWindow : BaseWindow
         {
             if (child is Button button)
                 button.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
+        }
+
+        foreach (var child in TreatmentItemsContainer.Children)
+        {
+            if (child is Button button)
+                button.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved
+                    || _selectedTreatmentPart == null || _target == null;
+        }
+
+        foreach (var button in new[]
+        {
+            TreatmentHeadButton, TreatmentChestButton, TreatmentLeftArmButton,
+            TreatmentRightArmButton, TreatmentLeftLegButton, TreatmentRightLegButton,
+        })
+        {
+            button.Disabled = _remainingActions <= 0 || _miniGameActive || _miniGameResolved;
         }
 
         foreach (var child in AmmunitionContainer.Children)
@@ -722,6 +911,24 @@ public sealed partial class CombatPanelWindow : BaseWindow
             "удачно" or "точно" => "GOOD // УСПЕШНО",
             _ => "MISS // ПРОМАХ",
         };
+        if (_pendingTreatmentItem is { } treatmentItem
+            && _pendingTreatmentType is { } treatmentType
+            && _pendingTreatmentPart is { } treatmentPart)
+        {
+            var treatmentQuality = quality switch
+            {
+                "идеально" or "точно" => CombatPanelTreatmentQuality.Perfect,
+                "удачно" => CombatPanelTreatmentQuality.Good,
+                _ => CombatPanelTreatmentQuality.Miss,
+            };
+
+            if (TreatmentRequested != null && _target is { } treatmentTarget)
+            {
+                TreatmentRequested.Invoke(treatmentTarget, treatmentItem, treatmentPart, treatmentType, treatmentQuality);
+                ConsumeTurn();
+            }
+        }
+
         if (_pendingAttackType is { } attackType && _pendingTargetPart is { } targetPart)
         {
             var attackQuality = quality switch
@@ -739,6 +946,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
         _pendingAttackType = null;
         _pendingTargetPart = null;
+        _pendingTreatmentItem = null;
+        _pendingTreatmentType = null;
+        _pendingTreatmentPart = null;
         UpdateTurnControls();
         UpdateSelection();
     }

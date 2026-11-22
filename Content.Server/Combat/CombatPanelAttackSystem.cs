@@ -9,6 +9,7 @@ using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Mobs.Components;
 using Content.Shared._Shitmed.Targeting;
+using Content.Server.Weapons.Ranged.Systems;
 using Robust.Shared.Prototypes;
 
 namespace Content.Server.Combat;
@@ -24,6 +25,7 @@ public sealed class CombatPanelAttackSystem : EntitySystem
     [Dependency] private readonly SharedBodySystem _body = default!;
     [Dependency] private readonly WoundSystem _wounds = default!;
     [Dependency] private readonly IPrototypeManager _prototypes = default!;
+    [Dependency] private readonly GunSystem _guns = default!;
 
     private const float ShotDamage = 16f;
     private const float WeaponDamage = 16f;
@@ -98,6 +100,12 @@ public sealed class CombatPanelAttackSystem : EntitySystem
             symmetry: partQuery.Symmetry).ToList();
 
         if (parts.Count == 0)
+            return;
+
+        // A role-play shot consumes one real round from the held gun, but never
+        // invokes the firing pipeline and therefore never creates a projectile.
+        if (message.AttackType == CombatPanelAttackType.Shoot
+            && !_guns.TryConsumeAmmoWithoutFiring(attacker))
             return;
 
         // Resolve the exact limb first; never route an explicit limb hit through the mob root.

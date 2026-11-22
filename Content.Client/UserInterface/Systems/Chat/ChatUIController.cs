@@ -23,6 +23,8 @@ using Content.Shared._Starlight.CollectiveMind; // Goobstation - Starlight colle
 using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
+using Content.Shared.Chemistry.Components;
+using Content.Shared.Chemistry.Prototypes;
 using Content.Shared.Combat;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
@@ -1139,6 +1141,20 @@ public sealed partial class ChatUIController : UIController
                     successfulHits,
                     quality));
             };
+            _combatPanelWindow.TreatmentRequested += (treatmentTarget, item, part, treatment, quality) =>
+            {
+                if (!_ent.EntityExists(treatmentTarget)
+                    || !_ent.EntityExists(item)
+                    || _combatPanelWindow?.Target != treatmentTarget)
+                    return;
+
+                _entityNetwork.SendSystemNetworkMessage(new CombatPanelTreatmentEvent(
+                    _ent.GetNetEntity(treatmentTarget),
+                    _ent.GetNetEntity(item),
+                    part,
+                    treatment,
+                    quality));
+            };
             _combatPanelWindow.AttackSoundRequested += firearm =>
             {
                 if (_player.LocalEntity is not { } localPlayer)
@@ -1329,10 +1345,12 @@ public sealed partial class ChatUIController : UIController
             || !_ent.TryGetComponent<InventoryComponent>(user, out var inventory))
         {
             _combatPanelWindow?.SetMedicalItems(Array.Empty<(string Name, Action Use)>());
+            _combatPanelWindow?.SetMedicalTreatmentItems(Array.Empty<(string Name, EntityUid Item, CombatPanelTreatmentType Type)>());
             return;
         }
 
         var items = new List<(string Name, Action Use)>();
+        var treatmentItems = new List<(string Name, EntityUid Item, CombatPanelTreatmentType Type)>();
         var opponentName = Identity.Name(target, _ent);
         var pendingStorage = new Queue<EntityUid>();
         var visited = new HashSet<EntityUid>();
@@ -1360,6 +1378,7 @@ public sealed partial class ChatUIController : UIController
         }
 
         _combatPanelWindow.SetMedicalItems(items);
+        _combatPanelWindow.SetMedicalTreatmentItems(treatmentItems);
 
         void AddMedicalItem(EntityUid item)
         {
@@ -1367,9 +1386,46 @@ public sealed partial class ChatUIController : UIController
                 return;
 
             var itemName = Identity.Name(item, _ent);
+
+            // Target treatment accepts only native medical components. The server
+            // independently validates ownership, target and component type.
+            if (_ent.HasComponent<HealingComponent>(item))
+                treatmentItems.Add((itemName, item, CombatPanelTreatmentType.Bandage));
+            if (_ent.TryGetComponent<InjectorComponent>(item, out var treatmentInjector)
+                && _prototypeManager.Resolve(treatmentInjector.ActiveModeProtoId, out var treatmentMode)
+                && treatmentMode.Behavior is InjectorBehavior.Inject or InjectorBehavior.Dynamic)
+                treatmentItems.Add((itemName, item, CombatPanelTreatmentType.Injection));
+
             // Only expose real healing items that are currently held. HealingSystem
             // handles UseInHandEvent and performs the actual self-treatment, including
             // body-part wounds, bruises and burns.
+            if (_ent.TryGetComponent<InjectorComponent>(item, out var selfInjector)
+                && _prototypeManager.Resolve(selfInjector.ActiveModeProtoId, out var selfInjectorMode)
+                && selfInjectorMode.Behavior is InjectorBehavior.Inject or InjectorBehavior.Dynamic
+                && TryGetCombatPanelHand(user, item, out _))
+            {
+                var capturedInjector = item;
+                var capturedInjectorName = itemName;
+                items.Add((itemName, () =>
+                {
+                    if (_player.LocalEntity is not { } currentUser
+                        || !IsCombatPanelItemAvailable(currentUser, capturedInjector)
+                        || !TryGetCombatPanelHand(currentUser, capturedInjector, out _))
+                        return;
+
+                    var coordinates = _ent.GetComponent<TransformComponent>(currentUser).Coordinates;
+                    _ent.System<SharedInteractionSystem>().InteractUsing(
+                        currentUser,
+                        capturedInjector,
+                        currentUser,
+                        coordinates,
+                        checkCanUse: false);
+
+                    _combatPanelWindow?.TryRequestEmote(
+                        $"пытается сделать себе инъекцию с помощью «{capturedInjectorName}» в рамках столкновения с «{opponentName}»");
+                }));
+            }
+
             if (_ent.HasComponent<HealingComponent>(item)
                 && TryGetCombatPanelHand(user, item, out var medicalHand))
             {

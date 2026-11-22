@@ -44,6 +44,7 @@ public sealed partial class InjectorSystem : EntitySystem
     [Dependency] private readonly SharedSolutionContainerSystem _solutionContainer = default!;
     [Dependency] private readonly StandingStateSystem _standingState = default!;
     [Dependency] private readonly UseDelaySystem _useDelay = default!;
+    [Dependency] private readonly SharedInteractionSystem _interaction = default!;
 
     public override void Initialize()
     {
@@ -190,11 +191,29 @@ public sealed partial class InjectorSystem : EntitySystem
     }
     #endregion Events Handling
 
+    /// <summary>
+    /// Starts the native injector workflow for TRENCHFACE after its interaction
+    /// challenge has succeeded. Reagent validation, transfer amount, blockers,
+    /// bloodstream injection, reactions, sounds and logging stay in InjectorSystem.
+    /// </summary>
+    public bool TryInjectFromCombatPanel(EntityUid injector, EntityUid user, EntityUid target)
+    {
+        if (!TryComp<InjectorComponent>(injector, out var component)
+            || !_prototypeManager.Resolve(component.ActiveModeProtoId, out var mode)
+            || mode.Behavior is not (InjectorBehavior.Inject or InjectorBehavior.Dynamic)
+            || component.IgnoreMobs
+            || !HasComp<BloodstreamComponent>(target)
+            || !_interaction.InRangeUnobstructed(user, target, popup: true))
+            return false;
+
+        return TryMobsDoAfter((injector, component), user, target, requireHand: false);
+    }
+
     #region Mob Interaction
     /// <summary>
     /// Send informative pop-up messages and wait for a do-after to complete.
     /// </summary>
-    private bool TryMobsDoAfter(Entity<InjectorComponent> injector, EntityUid user, EntityUid target)
+    private bool TryMobsDoAfter(Entity<InjectorComponent> injector, EntityUid user, EntityUid target, bool requireHand = true)
     {
         //Checks if target has blockInjection comp - fuck Chitinid, no more hypos for them - also Goob start
         if (HasComp<BlockInjectionComponent>(target))
@@ -213,8 +232,8 @@ public sealed partial class InjectorSystem : EntitySystem
             BreakOnMove = true,
             BreakOnWeightlessMove = false,
             BreakOnDamage = true,
-            NeedHand = injector.Comp.NeedHand,
-            BreakOnHandChange = injector.Comp.BreakOnHandChange,
+            NeedHand = requireHand && injector.Comp.NeedHand,
+            BreakOnHandChange = requireHand && injector.Comp.BreakOnHandChange,
             MovementThreshold = injector.Comp.MovementThreshold,
         }))
             return false;
