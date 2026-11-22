@@ -50,15 +50,37 @@ public sealed partial class ChatSystem
             return;
 
         // A type + symmetry should identify one limb. Keep the first matching
-        // segment deterministic, matching the surgery UI's selected part.
+        // segment deterministic and retain its exact entity for the integrity check.
         var damagedPartUid = targetParts[0].Id;
         var nativeTargetPart = _combatBody.GetTargetBodyPart(targetParts[0].Component);
-        var applied = _combatDamageable.TryChangeDamage(
-            target,
-            damage,
-            origin: source,
-            targetPart: nativeTargetPart,
-            canMiss: false);
+
+        DamageSpecifier? applied;
+        if (HasComp<TargetingComponent>(target))
+        {
+            // Normal humanoid route: DamageableSystem applies modifiers and wound
+            // processing on the root body while routing to this exact body part.
+            applied = _combatDamageable.TryChangeDamage(
+                target,
+                damage,
+                origin: source,
+                targetPart: nativeTargetPart,
+                canMiss: false);
+        }
+        else if (TryComp<DamageableComponent>(damagedPartUid, out var partDamageable))
+        {
+            // Some bodies do not carry TargetingComponent. Never let the engine's
+            // fallback redirect an explicitly selected limb to the chest.
+            applied = _combatDamageable.TryChangeDamage(
+                damagedPartUid,
+                damage,
+                damageable: partDamageable,
+                origin: source,
+                canMiss: false);
+        }
+        else
+        {
+            return;
+        }
 
         if (applied is null || applied.Empty)
             return;
