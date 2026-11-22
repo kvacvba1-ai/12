@@ -37,50 +37,29 @@ public sealed partial class ChatSystem
 
         var damage = new DamageSpecifier(_prototypeManager.Index<DamageTypePrototype>(damageType), damageAmount);
 
-        // Resolve the requested limb to its actual body-part entity first.
-        // DamageableSystem.TryChangeDamage(target, targetPart: ...) can fall back
-        // to Chest when the victim has no TargetingComponent, even if targetPart
-        // was explicitly supplied. Applying damage to the part entity avoids that
-        // routing bug and guarantees that the selected side is the one hit.
+        // Use the same damage route as surgery: apply damage to the root body
+        // and let DamageableSystem resolve the selected BodyPartComponent into
+        // the engine's native TargetBodyPart routing. This is the path used by
+        // SurgerySystem.SetDamage and keeps damage, wounds and BodyStatus in sync.
         var bodyPartQuery = _combatBody.ConvertTargetBodyPart(targetPart);
-        var targetParts = _combatBody.GetBodyChildrenOfTypeWithComponent<DamageableComponent>(
+        var targetParts = _combatBody.GetBodyChildrenOfType(
             target,
             bodyPartQuery.Type,
             symmetry: bodyPartQuery.Symmetry).ToList();
 
-        EntityUid? damagedPartUid = null;
-        DamageSpecifier? applied;
-
-        if (targetParts.Count > 0)
-        {
-            // A body-part type + symmetry should identify one limb. If a species has
-            // multiple matching segments, keep the attack deterministic and hit the
-            // first matching segment rather than spreading one shot across all of them.
-            damagedPartUid = targetParts[0].Id;
-            applied = _combatDamageable.TryChangeDamage(
-                damagedPartUid.Value,
-                damage,
-                origin: source,
-                canMiss: false);
-        }
-        else if (HasComp<TargetingComponent>(target))
-        {
-            // Some body setups keep DamageableComponent on the mob root instead of
-            // each body-part entity. In that case use the engine's native targeting
-            // route, but only when TargetingComponent is present: without it the
-            // engine silently falls back to Chest for an explicitly selected limb.
-            applied = _combatDamageable.TryChangeDamage(
-                target,
-                damage,
-                origin: source,
-                targetPart: targetPart,
-                canMiss: false);
-        }
-        else
-        {
-            // Never silently turn a missing limb into chest damage.
+        if (targetParts.Count == 0)
             return;
-        }
+
+        // A type + symmetry should identify one limb. Keep the first matching
+        // segment deterministic, matching the surgery UI's selected part.
+        var damagedPartUid = targetParts[0].Id;
+        var nativeTargetPart = _combatBody.GetTargetBodyPart(targetParts[0].Component);
+        var applied = _combatDamageable.TryChangeDamage(
+            target,
+            damage,
+            origin: source,
+            targetPart: nativeTargetPart,
+            canMiss: false);
 
         if (applied is null || applied.Empty)
             return;
