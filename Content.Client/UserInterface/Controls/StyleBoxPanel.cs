@@ -55,6 +55,7 @@ public sealed class StyleBoxPanel : StyleBox
             MathF.Max(inner.Left + 1f * uiScale, inner.Right - 1f * uiScale),
             MathF.Max(inner.Top + 1f * uiScale, inner.Bottom - 1f * uiScale));
         DrawRoundedRect(handle, content, MathF.Max(0f, innerRadius - uiScale), BackgroundColor);
+        DrawSurfaceTexture(handle, content, uiScale);
 
         // Fine machined lip and a dark recessed seam make the plate read as layered steel.
         var lineY = inner.Top + MathF.Max(2f, innerRadius * 0.45f);
@@ -114,6 +115,67 @@ public sealed class StyleBoxPanel : StyleBox
             Margin.Right => BorderThickness.Right + CornerRadius * 0.35f,
             _ => 0f,
         };
+    }
+
+    private void DrawSurfaceTexture(DrawingHandleScreen handle, UIBox2 box, float scale)
+    {
+        // A fixed procedural brushed-metal grain. The pattern is stable between frames.
+        var w = box.Width;
+        var h = box.Height;
+        var grainA = new Color(43, 51, 49);
+        var grainB = new Color(17, 23, 23);
+        for (var row = 0; row < 9; row++)
+        {
+            var y = box.Top + h * (0.10f + row * 0.095f);
+            handle.DrawLine(new Vector2(box.Left + w * 0.035f, y),
+                new Vector2(box.Right - w * 0.035f, y + ((row % 3) - 1) * scale), grainA);
+            handle.DrawLine(new Vector2(box.Left + w * 0.08f, y + 1.5f * scale),
+                new Vector2(box.Right - w * 0.08f, y + 1.5f * scale), grainB);
+        }
+
+        // Uneven pits and tiny oxidation blooms across the plate, not only on its border.
+        for (var i = 0; i < 72; i++)
+        {
+            var xSeed = (i * 37 + 17) % 97;
+            var ySeed = (i * 53 + 29) % 89;
+            var x = box.Left + w * (0.035f + xSeed / 100f * 0.93f);
+            var y = box.Top + h * (0.045f + ySeed / 100f * 0.91f);
+            var radius = (0.45f + (i % 4) * 0.22f) * scale;
+            var color = i % 4 == 0 ? RustColor : i % 3 == 0 ? grainB : grainA;
+            handle.DrawCircle(new Vector2(x, y), radius, color, true);
+        }
+
+        // Long, shallow abrasion marks with broken highlights and dark undersides.
+        var scratches = new (float X, float Y, float L, float S)[]
+        {
+            (0.08f, 0.19f, 0.11f, 0.018f), (0.72f, 0.14f, 0.16f, -0.012f),
+            (0.22f, 0.42f, 0.07f, 0.009f), (0.81f, 0.57f, 0.10f, -0.014f),
+            (0.12f, 0.78f, 0.13f, -0.016f), (0.58f, 0.87f, 0.18f, 0.012f),
+            (0.43f, 0.29f, 0.05f, -0.009f), (0.91f, 0.34f, 0.045f, 0.015f),
+        };
+        foreach (var scratch in scratches)
+        {
+            var start = new Vector2(box.Left + w * scratch.X, box.Top + h * scratch.Y);
+            var end = start + new Vector2(w * scratch.L, h * scratch.S);
+            handle.DrawLine(start + new Vector2(0, scale), end + new Vector2(0, scale), grainB);
+            handle.DrawLine(start, end, ScratchColor);
+        }
+
+        // Corrosion blooms collect near seams and fasteners.
+        for (var i = 0; i < 18; i++)
+        {
+            var side = i % 4;
+            var t = ((i * 29 + 11) % 83) / 100f;
+            var p = side switch
+            {
+                0 => new Vector2(box.Left + w * t, box.Top + h * 0.035f),
+                1 => new Vector2(box.Right - w * 0.035f, box.Top + h * t),
+                2 => new Vector2(box.Left + w * t, box.Bottom - h * 0.035f),
+                _ => new Vector2(box.Left + w * 0.035f, box.Top + h * t),
+            };
+            handle.DrawCircle(p, (1.1f + i % 3) * scale, RustColor, true);
+            handle.DrawCircle(p + new Vector2(2f, 1f) * scale, 0.8f * scale, new Color(181, 103, 55), true);
+        }
     }
 
     private void DrawWear(DrawingHandleScreen handle, UIBox2 box, float scale)
