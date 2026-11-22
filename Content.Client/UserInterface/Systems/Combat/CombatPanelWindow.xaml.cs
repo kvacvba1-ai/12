@@ -519,7 +519,15 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
         _miniGameElapsed += args.DeltaSeconds;
         if (_ringMiniGame)
-            _timingRing.Advance(args.DeltaSeconds);
+        {
+            if (_timingRing.Advance(args.DeltaSeconds))
+            {
+                // The needle gets exactly one revolution. Any unresolved shot
+                // is finalized as soon as it reaches the end of the dial.
+                ResolveMiniGame(forceMiss: _ringSuccesses == 0);
+                return;
+            }
+        }
         else
         {
             const float speed = 1.65f;
@@ -660,19 +668,32 @@ public sealed partial class CombatPanelWindow : BaseWindow
 internal sealed class TimingRingControl : Control
 {
     private const int TargetSectorCount = 2;
+    private static readonly float[] TargetAngles =
+    {
+        MathF.PI * 7f / 6f,  // 210° — upper-left
+        MathF.PI * 25f / 18f // 250° — upper-left
+    };
+
     private float _angle;
     private int _targetCount = TargetSectorCount;
     private int _targetIndex;
-    private const float RotationSpeed = MathF.PI * 1.35f;
+    private const float RotationSpeed = MathF.PI * 0.7f;
     private const float SectorHalfWidth = 0.34f;
 
     public bool IsInTargetSector
     {
         get
         {
-            var sectorAngle = MathF.Tau * (_targetIndex + 0.5f) / _targetCount;
-            var delta = MathF.Abs((_angle - sectorAngle + MathF.PI * 3f) % MathF.Tau - MathF.PI);
-            return delta <= SectorHalfWidth;
+            // Both visible sectors are valid hit windows. The highlighted
+            // sector only indicates the current focus; it is not the sole hitbox.
+            for (var i = 0; i < _targetCount; i++)
+            {
+                var delta = MathF.Abs(MathF.IEEERemainder(_angle - TargetAngles[i], MathF.Tau));
+                if (delta <= SectorHalfWidth)
+                    return true;
+            }
+
+            return false;
         }
     }
 
@@ -683,7 +704,13 @@ internal sealed class TimingRingControl : Control
         _angle = 0f;
         _targetIndex = 0;
     }
-    public void Advance(float delta) => _angle = (_angle + delta * RotationSpeed) % MathF.Tau;
+
+    /// <summary>Advances the needle once and returns true when the full dial has been traversed.</summary>
+    public bool Advance(float delta)
+    {
+        _angle = MathF.Min(_angle + delta * RotationSpeed, MathF.Tau);
+        return _angle >= MathF.Tau;
+    }
 
     protected override void Draw(DrawingHandleScreen handle)
     {
@@ -697,9 +724,9 @@ internal sealed class TimingRingControl : Control
 
         for (var sector = 0; sector < _targetCount; sector++)
         {
-            var middle = MathF.Tau * (sector + 0.5f) / _targetCount;
+            var middle = TargetAngles[sector];
             DrawSector(handle, center, radius, middle - SectorHalfWidth, middle + SectorHalfWidth,
-                sector == _targetIndex ? new Color(220, 65, 48) : new Color(125, 48, 42));
+                sector == _targetIndex ? new Color(220, 65, 48) : new Color(175, 65, 52));
         }
 
         for (var rivet = 0; rivet < 8; rivet++)
@@ -750,8 +777,9 @@ internal sealed class TimingRingControl : Control
 /// <summary>Undertale-style moving marker timing bar with a fixed green hit window.</summary>
 internal sealed class TimingBarControl : Control
 {
-    public const float PerfectHalfWidth = 0.10f;
-    public const float GoodHalfWidth = 0.35f;
+    // Narrow the melee timing windows to roughly one third of their former width.
+    public const float PerfectHalfWidth = 0.04f;
+    public const float GoodHalfWidth = 0.12f;
 
     public float MarkerPosition { get; set; }
 
