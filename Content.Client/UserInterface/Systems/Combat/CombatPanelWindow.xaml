@@ -123,6 +123,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                         </BoxContainer>
                     </GridContainer>
                 </PanelContainer>
+                <PanelContainer Name="ResizeHintFrame" HorizontalExpand="True">
+                    <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="5 2">
+                        <Label Text="TRENCHFACE // FIELD CONSOLE" StyleClasses="LabelSmall" HorizontalExpand="True" />
+                        <Label Text="↘ ПОТЯНИТЕ ЗА КРАЙ ДЛЯ ИЗМЕНЕНИЯ РАЗМЕРА" StyleClasses="LabelSmall" />
+                    </BoxContainer>
+                </PanelContainer>
             </BoxContainer>
         </BoxContainer>
       </PanelContainer>
