@@ -76,125 +76,38 @@ public sealed partial class CombatPanelWindow : BaseWindow
         MiniGameVisualContainer.AddChild(_timingBar);
         _timingRing.Visible = false;
         _timingBar.Visible = false;
-        // TRENCHFACE: layered cold steel, oxidized seams and restrained battle wear.
+        // TRENCHFACE: keep the shell and title rail armored; leave the working
+        // surface open and quiet instead of nesting decorative frames inside it.
         WindowFrame.PanelOverride = new StyleBoxPanel
         {
-            BackgroundColor = new Color(19, 24, 25),
-            BorderColor = new Color(112, 119, 111),
-            InnerBorderColor = new Color(42, 49, 48),
-            HighlightColor = new Color(190, 194, 177),
-            AccentColor = new Color(119, 35, 34),
+            BackgroundColor = new Color(22, 27, 27),
+            BorderColor = new Color(108, 116, 107),
+            InnerBorderColor = new Color(31, 38, 37),
+            HighlightColor = new Color(174, 179, 160),
+            AccentColor = new Color(126, 39, 34),
             RustColor = new Color(130, 61, 35),
-            ScratchColor = new Color(102, 111, 105),
             BorderThickness = new Thickness(5),
-            CornerRadius = 17f,
-            RivetRadius = 3.2f,
-            ShowWear = true,
-            ShowBlood = true,
-        };
-
-        WindowHeader.PanelOverride = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(37, 43, 42),
-            BorderColor = new Color(133, 91, 61),
-            InnerBorderColor = new Color(54, 57, 51),
-            HighlightColor = new Color(208, 190, 151),
-            AccentColor = new Color(145, 43, 38),
-            RustColor = new Color(155, 75, 39),
-            BorderThickness = new Thickness(3),
             CornerRadius = 12f,
             RivetRadius = 3f,
-            ShowWear = true,
-            ShowBlood = true,
-            ShowHazardStripe = true,
-        };
-
-        HeaderFrame.PanelOverride = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(34, 39, 38),
-            BorderColor = new Color(123, 91, 65),
-            InnerBorderColor = new Color(55, 55, 49),
-            HighlightColor = new Color(184, 171, 143),
-            AccentColor = new Color(132, 39, 37),
-            RustColor = new Color(145, 69, 39),
-            BorderThickness = new Thickness(3),
-            CornerRadius = 12f,
-            RivetRadius = 2.8f,
-            ShowWear = true,
-            ShowBlood = true,
-        };
-
-        var insetFrame = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(25, 31, 32),
-            BorderColor = new Color(75, 86, 84),
-            InnerBorderColor = new Color(39, 47, 47),
-            HighlightColor = new Color(126, 139, 132),
-            AccentColor = new Color(102, 48, 39),
-            RustColor = new Color(112, 58, 38),
-            ScratchColor = new Color(82, 94, 90),
-            BorderThickness = new Thickness(2),
-            CornerRadius = 10f,
-            RivetRadius = 2f,
             ShowRivets = true,
             ShowAccent = true,
             ShowWear = true,
         };
 
-        var bloodFrame = new StyleBoxPanel
+        WindowHeader.PanelOverride = new StyleBoxPanel
         {
-            BackgroundColor = new Color(34, 28, 28),
-            BorderColor = new Color(125, 68, 57),
-            InnerBorderColor = new Color(59, 43, 41),
-            HighlightColor = new Color(174, 135, 112),
-            AccentColor = new Color(145, 35, 39),
-            RustColor = new Color(139, 62, 39),
-            BloodColor = new Color(112, 20, 28),
+            BackgroundColor = new Color(35, 41, 39),
+            BorderColor = new Color(126, 91, 62),
+            InnerBorderColor = new Color(42, 47, 43),
+            HighlightColor = new Color(193, 177, 143),
+            AccentColor = new Color(139, 43, 39),
+            RustColor = new Color(145, 69, 39),
             BorderThickness = new Thickness(3),
-            CornerRadius = 11f,
-            RivetRadius = 2.7f,
-            ShowWear = true,
-            ShowBlood = true,
+            CornerRadius = 8f,
+            RivetRadius = 2.5f,
+            ShowRivets = true,
+            ShowAccent = true,
         };
-
-        var actionFrame = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(30, 36, 36),
-            BorderColor = new Color(93, 101, 94),
-            InnerBorderColor = new Color(43, 49, 47),
-            HighlightColor = new Color(151, 157, 143),
-            AccentColor = new Color(125, 54, 38),
-            RustColor = new Color(132, 67, 40),
-            BorderThickness = new Thickness(2),
-            CornerRadius = 9f,
-            RivetRadius = 2f,
-            ShowWear = true,
-            ShowBlood = false,
-        };
-
-        var turnFrame = new StyleBoxPanel
-        {
-            BackgroundColor = new Color(35, 40, 39),
-            BorderColor = new Color(117, 105, 85),
-            InnerBorderColor = new Color(49, 53, 49),
-            HighlightColor = new Color(181, 173, 147),
-            AccentColor = new Color(133, 43, 38),
-            RustColor = new Color(140, 69, 39),
-            BorderThickness = new Thickness(3),
-            CornerRadius = 11f,
-            RivetRadius = 2.8f,
-            ShowWear = true,
-            ShowBlood = false,
-            ShowHazardStripe = true,
-        };
-
-        ActionFrame.PanelOverride = actionFrame;
-        TargetZoneFrame.PanelOverride = bloodFrame;
-        MiniGameContainer.PanelOverride = bloodFrame;
-        TurnFrame.PanelOverride = turnFrame;
-        CombatTab.PanelOverride = insetFrame;
-        StatusTab.PanelOverride = insetFrame;
-        EquipmentTab.PanelOverride = insetFrame;
 
         TabContainer.SetTabTitle(CombatTab, "Бой");
         TabContainer.SetTabTitle(StatusTab, "Тело");
