@@ -53,13 +53,13 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
         switch (message.Treatment)
         {
             case CombatPanelTreatmentType.Bandage:
-                if (message.Part is TargetBodyPart.Head
+                if ((message.Part is TargetBodyPart.Head
                     or TargetBodyPart.Chest
                     or TargetBodyPart.Groin
                     or TargetBodyPart.LeftArm
                     or TargetBodyPart.RightArm
                     or TargetBodyPart.LeftLeg
-                    or TargetBodyPart.RightLeg
+                    or TargetBodyPart.RightLeg)
                     && HasComp<BodyComponent>(targetUid)
                     && HasComp<HealingComponent>(itemUid))
                 {
