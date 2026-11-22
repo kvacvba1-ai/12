@@ -925,13 +925,6 @@ public sealed partial class CombatPanelWindow : BaseWindow
             && _pendingTreatmentType is { } treatmentType
             && _pendingTreatmentPart is { } treatmentPart)
         {
-            var treatmentQuality = quality switch
-            {
-                "идеально" or "точно" => CombatPanelTreatmentQuality.Perfect,
-                "удачно" => CombatPanelTreatmentQuality.Good,
-                _ => CombatPanelTreatmentQuality.Miss,
-            };
-
             if (_target is { } treatmentTarget)
             {
                 if (!_ringMiniGame && !forceMiss)
