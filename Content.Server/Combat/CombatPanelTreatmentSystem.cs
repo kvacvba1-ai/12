@@ -36,8 +36,9 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
             || !TryGetEntity(message.Target, out var target)
             || target is not { } targetUid
             || !EntityManager.EntityExists(targetUid)
-            || user == targetUid
-            || Transform(user).MapUid != Transform(targetUid).MapUid
+            // Self-treatment is valid: the selected body part still resolves through
+            // the native body/healing pipeline. Other targets must be on the same map.
+            || (user != targetUid && Transform(user).MapUid != Transform(targetUid).MapUid)
             || !TryGetEntity(message.Item, out var item)
             || item is not { } itemUid
             || !EntityManager.EntityExists(itemUid))
