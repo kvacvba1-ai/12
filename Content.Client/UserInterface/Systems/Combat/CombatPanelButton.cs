@@ -13,6 +13,11 @@ namespace Content.Client.UserInterface.Systems.Combat;
 /// </summary>
 public sealed class CombatPanelButton : Button
 {
+    public CombatPanelButton()
+    {
+        Label.FontColorOverride = new Color(218, 198, 155);
+    }
+
     protected override void Draw(DrawingHandleScreen handle)
     {
         base.Draw(handle);
@@ -25,12 +30,16 @@ public sealed class CombatPanelButton : Button
         var disabled = Disabled;
         var pressed = HasStylePseudoClass("pressed");
         var hovered = HasStylePseudoClass("hover");
+        var active = HasStyleClass("CombatTabActive");
 
-        var baseColor = disabled ? new Color(35, 38, 37)
+        var baseColor = disabled ? new Color(30, 33, 32)
+            : active ? new Color(72, 53, 39)
             : pressed ? new Color(54, 45, 37)
-            : hovered ? new Color(66, 67, 57)
-            : new Color(43, 49, 47);
-        var edge = disabled ? new Color(66, 68, 62) : new Color(135, 117, 87);
+            : hovered ? new Color(64, 61, 49)
+            : new Color(35, 42, 41);
+        var edge = disabled ? new Color(65, 65, 58)
+            : active ? new Color(174, 119, 69)
+            : new Color(119, 103, 78);
         var dark = new Color(16, 20, 20);
         var rust = new Color(111, 54, 34);
         var bone = disabled ? new Color(133, 128, 111) : new Color(220, 204, 164);
@@ -74,10 +83,11 @@ public sealed class CombatPanelButton : Button
         }
 
         // A narrow red witness stripe identifies the primary/armed action.
-        if (HasStyleClass("CombatPrimary"))
+        if (HasStyleClass("CombatPrimary") || active)
         {
-            handle.DrawRect(new UIBox2(9, 9, 13, size.Y - 9), new Color(139, 39, 34));
-            handle.DrawRect(new UIBox2(13, 9, 14, size.Y - 9), new Color(184, 105, 63));
+            var stripe = active ? new Color(190, 133, 77) : new Color(139, 39, 34);
+            handle.DrawRect(new UIBox2(9, 9, 13, size.Y - 9), new Color(54, 23, 21));
+            handle.DrawRect(new UIBox2(13, 9, 14, size.Y - 9), stripe);
         }
 
         // Thin warm metal glint on the upper edge, never a flat grey button.
