@@ -55,7 +55,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
     public event Action<string>? EmoteRequested;
     public event Action<TargetBodyPart, CombatPanelAttackType, int, CombatPanelAttackQuality>? AttackRequested;
     public event Action<bool>? AttackSoundRequested;
-    public event Action<EntityUid, EntityUid, TargetBodyPart, CombatPanelTreatmentType, CombatPanelTreatmentQuality>? TreatmentRequested;
+    public event Action<EntityUid, EntityUid, TargetBodyPart, CombatPanelTreatmentType, CombatPanelTreatmentStage>? TreatmentStageRequested;
 
     public CombatPanelWindow()
     {
@@ -593,6 +593,8 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _timingRing.Configure();
         _timingRing.Reset();
         _timingBar.MarkerPosition = 0f;
+        if (_target is { } target)
+            TreatmentStageRequested?.Invoke(target, item, part, type, CombatPanelTreatmentStage.Begin);
     }
 
     public bool TryRequestEmote(string message)
@@ -854,6 +856,14 @@ public sealed partial class CombatPanelWindow : BaseWindow
         if (!_miniGameActive || !_ringMiniGame)
             return;
 
+        if (_pendingTreatmentItem is { } treatmentItem
+            && _pendingTreatmentType is { } treatmentType
+            && _pendingTreatmentPart is { } treatmentPart
+            && _target is { } treatmentTarget)
+        {
+            TreatmentStageRequested?.Invoke(treatmentTarget, treatmentItem, treatmentPart, treatmentType, CombatPanelTreatmentStage.Hit);
+        }
+
         if (_timingRing.IsInTargetSector)
         {
             _ringSuccesses++;
@@ -915,16 +925,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
             && _pendingTreatmentType is { } treatmentType
             && _pendingTreatmentPart is { } treatmentPart)
         {
-            var treatmentQuality = quality switch
+            if (_target is { } treatmentTarget)
             {
-                "идеально" or "точно" => CombatPanelTreatmentQuality.Perfect,
-                "удачно" => CombatPanelTreatmentQuality.Good,
-                _ => CombatPanelTreatmentQuality.Miss,
-            };
+                if (forceMiss)
+                    TreatmentStageRequested?.Invoke(treatmentTarget, treatmentItem, treatmentPart, treatmentType, CombatPanelTreatmentStage.Cancel);
+                else if (!_ringMiniGame)
+                    TreatmentStageRequested?.Invoke(treatmentTarget, treatmentItem, treatmentPart, treatmentType, CombatPanelTreatmentStage.Hit);
 
-            if (TreatmentRequested != null && _target is { } treatmentTarget)
-            {
-                TreatmentRequested.Invoke(treatmentTarget, treatmentItem, treatmentPart, treatmentType, treatmentQuality);
                 ConsumeTurn();
             }
         }

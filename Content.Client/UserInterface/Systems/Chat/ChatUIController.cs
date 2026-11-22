@@ -1141,7 +1141,7 @@ public sealed partial class ChatUIController : UIController
                     successfulHits,
                     quality));
             };
-            _combatPanelWindow.TreatmentRequested += (treatmentTarget, item, part, treatment, quality) =>
+            _combatPanelWindow.TreatmentStageRequested += (treatmentTarget, item, part, treatment, stage) =>
             {
                 if (!_ent.EntityExists(treatmentTarget)
                     || !_ent.EntityExists(item)
@@ -1153,7 +1153,7 @@ public sealed partial class ChatUIController : UIController
                     _ent.GetNetEntity(item),
                     part,
                     treatment,
-                    quality));
+                    stage));
             };
             _combatPanelWindow.AttackSoundRequested += firearm =>
             {
