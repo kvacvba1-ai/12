@@ -21,8 +21,6 @@ namespace Content.Server.Combat;
 public sealed class CombatPanelTreatmentSystem : EntitySystem
 {
     private const float ChallengeTimeoutSeconds = 8f;
-    private const float RingRotationSpeed = MathF.PI;
-    private const float RingSectorHalfWidth = 0.32f; // Includes a small allowance for network latency.
     private const float InjectionMarkerSpeed = 1.65f;
     private const float BandagePerfectHalfWidth = 0.07f;
     private const float BandageGoodHalfWidth = 0.20f;
