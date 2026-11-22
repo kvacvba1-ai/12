@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 using Content.Shared.DoAfter;
+using Content.Shared._Shitmed.Targeting;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared.Medical;
@@ -11,9 +12,9 @@ public sealed partial class HealingDoAfterEvent : SimpleDoAfterEvent
     /// <summary>
     /// Explicit limb chosen by a treatment UI. Null preserves normal targeting behavior.
     /// </summary>
-    public EntityUid? TargetedPart { get; }
+    public TargetBodyPart? TargetedPart { get; }
 
-    public HealingDoAfterEvent(EntityUid? targetedPart = null)
+    public HealingDoAfterEvent(TargetBodyPart? targetedPart = null)
     {
         TargetedPart = targetedPart;
     }
