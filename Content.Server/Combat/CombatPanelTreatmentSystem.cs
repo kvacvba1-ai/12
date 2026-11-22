@@ -71,6 +71,9 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
             case CombatPanelTreatmentStage.Hit:
                 RegisterHit(user, targetUid, itemUid, message);
                 break;
+            case CombatPanelTreatmentStage.Cancel:
+                CancelChallenge(user, targetUid, itemUid, message);
+                break;
         }
     }
 
@@ -94,6 +97,22 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
             message.Part,
             message.Treatment,
             now);
+    }
+
+    private void CancelChallenge(
+        EntityUid user,
+        EntityUid target,
+        EntityUid item,
+        CombatPanelTreatmentEvent message)
+    {
+        if (_challenges.TryGetValue(user, out var challenge)
+            && challenge.Target == target
+            && challenge.Item == item
+            && challenge.Part == message.Part
+            && challenge.Treatment == message.Treatment)
+        {
+            _challenges.Remove(user);
+        }
     }
 
     private void RegisterHit(
