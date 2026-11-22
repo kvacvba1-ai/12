@@ -3,7 +3,6 @@
 using System.Linq;
 using Content.Shared._Shitmed.Medical.Surgery.Wounds.Components;
 using Content.Shared._Shitmed.Medical.Surgery.Wounds.Systems;
-using Content.Shared._Shitmed.Targeting;
 using Content.Shared.Body.Systems;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
@@ -37,11 +36,12 @@ public sealed partial class ChatSystem
 
         var damage = new DamageSpecifier(_prototypeManager.Index<DamageTypePrototype>(damageType), damageAmount);
 
-        // Use the engine's native body-part damage route: apply damage to the
-        // root body and let DamageableSystem resolve the selected BodyPartComponent
-        // into its TargetBodyPart. This keeps damage, wounds and BodyStatus in sync.
+        // Damage the selected body-part entity directly. DamageableSystem then
+        // runs its normal resistance, damage-change, wound and integrity handling
+        // on that exact part. Routing through the mob root can silently resolve to
+        // Chest (or fail when the root has no DamageableComponent), so do not use it.
         var bodyPartQuery = _combatBody.ConvertTargetBodyPart(targetPart);
-        var targetParts = _combatBody.GetBodyChildrenOfType(
+        var targetParts = _combatBody.GetBodyChildrenOfTypeWithComponent<DamageableComponent>(
             target,
             bodyPartQuery.Type,
             symmetry: bodyPartQuery.Symmetry).ToList();
@@ -49,45 +49,19 @@ public sealed partial class ChatSystem
         if (targetParts.Count == 0)
             return;
 
-        // A type + symmetry should identify one limb. Keep the first matching
-        // segment deterministic and retain its exact entity for the integrity check.
-        var damagedPartUid = targetParts[0].Id;
-        var nativeTargetPart = _combatBody.GetTargetBodyPart(targetParts[0].Component);
-
-        DamageSpecifier? applied;
-        if (HasComp<TargetingComponent>(target))
-        {
-            // Normal humanoid route: DamageableSystem applies modifiers and wound
-            // processing on the root body while routing to this exact body part.
-            applied = _combatDamageable.TryChangeDamage(
-                target,
-                damage,
-                origin: source,
-                targetPart: nativeTargetPart,
-                canMiss: false);
-        }
-        else if (TryComp<DamageableComponent>(damagedPartUid, out var partDamageable))
-        {
-            // Some bodies do not carry TargetingComponent. Never let the engine's
-            // fallback redirect an explicitly selected limb to the chest.
-            applied = _combatDamageable.TryChangeDamage(
-                damagedPartUid,
-                damage,
-                damageable: partDamageable,
-                origin: source,
-                canMiss: false);
-        }
-        else
-        {
-            return;
-        }
+        // One selected side must produce one deterministic limb hit.
+        var (damagedPartUid, _, partDamageable) = targetParts[0];
+        var applied = _combatDamageable.TryChangeDamage(
+            damagedPartUid,
+            damage,
+            damageable: partDamageable,
+            origin: source,
+            canMiss: false);
 
         if (applied is null || applied.Empty)
             return;
 
-        // Check only the selected body-part type and symmetry. When damage was
-        // applied directly, additionally require the exact same part entity.
-        // The wound system updates integrity and the health analyzer's BodyStatus.
+        // Check the exact damaged part for its native wound integrity and amputation state.
         var woundableParts = _combatBody.GetBodyChildrenOfTypeWithComponent<WoundableComponent>(
             target,
             bodyPartQuery.Type,
@@ -95,7 +69,7 @@ public sealed partial class ChatSystem
 
         foreach (var (partUid, _, woundable) in woundableParts)
         {
-            if (damagedPartUid is { } exactPart && partUid != exactPart
+            if (partUid != damagedPartUid
                 || !woundable.CanRemove
                 || woundable.ParentWoundable is not { } parent
                 || woundable.IntegrityCap <= 0
