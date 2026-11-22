@@ -202,23 +202,14 @@ public sealed partial class InjectorSystem : EntitySystem
             || mode.Behavior is not (InjectorBehavior.Inject or InjectorBehavior.Dynamic))
             return false;
 
-        // The selected injector may be stored in a pocket. DoAfterArgs copies
-        // these flags when it starts, so restore the component immediately after.
-        var needHand = component.NeedHand;
-        var breakOnHandChange = component.BreakOnHandChange;
-        component.NeedHand = false;
-        component.BreakOnHandChange = false;
-        var started = TryMobsDoAfter((injector, component), user, target);
-        component.NeedHand = needHand;
-        component.BreakOnHandChange = breakOnHandChange;
-        return started;
+        return TryMobsDoAfter((injector, component), user, target, requireHand: false);
     }
 
     #region Mob Interaction
     /// <summary>
     /// Send informative pop-up messages and wait for a do-after to complete.
     /// </summary>
-    private bool TryMobsDoAfter(Entity<InjectorComponent> injector, EntityUid user, EntityUid target)
+    private bool TryMobsDoAfter(Entity<InjectorComponent> injector, EntityUid user, EntityUid target, bool requireHand = true)
     {
         //Checks if target has blockInjection comp - fuck Chitinid, no more hypos for them - also Goob start
         if (HasComp<BlockInjectionComponent>(target))
@@ -237,8 +228,8 @@ public sealed partial class InjectorSystem : EntitySystem
             BreakOnMove = true,
             BreakOnWeightlessMove = false,
             BreakOnDamage = true,
-            NeedHand = injector.Comp.NeedHand,
-            BreakOnHandChange = injector.Comp.BreakOnHandChange,
+            NeedHand = requireHand && injector.Comp.NeedHand,
+            BreakOnHandChange = requireHand && injector.Comp.BreakOnHandChange,
             MovementThreshold = injector.Comp.MovementThreshold,
         }))
             return false;
