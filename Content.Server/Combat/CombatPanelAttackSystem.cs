@@ -43,10 +43,11 @@ public sealed class CombatPanelAttackSystem : EntitySystem
         if (args.SenderSession.AttachedEntity is not { } attacker
             || !EntityManager.EntityExists(attacker)
             || !TryGetEntity(message.Target, out var target)
-            || !EntityManager.EntityExists(target)
-            || attacker == target
-            || !HasComp<MobStateComponent>(target)
-            || Transform(attacker).MapUid != Transform(target).MapUid)
+            || target is not { } targetUid
+            || !EntityManager.EntityExists(targetUid)
+            || attacker == targetUid
+            || !HasComp<MobStateComponent>(targetUid)
+            || Transform(attacker).MapUid != Transform(targetUid).MapUid)
             return;
 
         if (message.Part is not (TargetBodyPart.Head
@@ -92,7 +93,7 @@ public sealed class CombatPanelAttackSystem : EntitySystem
 
         var partQuery = _body.ConvertTargetBodyPart(message.Part);
         var parts = _body.GetBodyChildrenOfTypeWithComponent<DamageableComponent>(
-            target,
+            targetUid,
             partQuery.Type,
             symmetry: partQuery.Symmetry).ToList();
 
