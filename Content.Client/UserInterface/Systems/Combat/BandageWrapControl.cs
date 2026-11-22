@@ -32,6 +32,7 @@ public sealed class BandageWrapControl : Control
     public event Action? Completed;
 
     public float Progress => _progress;
+    public bool IsCompleted => _completed;
 
     public BandageWrapControl()
     {
