@@ -287,6 +287,8 @@ public sealed partial class CombatPanelWindow : BaseWindow
     {
         // The same opponent is the same encounter, regardless of who opened the panel.
         var sameEncounter = _target == target;
+        if (!sameEncounter)
+            CancelActiveTreatment();
 
         _target = target;
         _targetName = targetName;
@@ -299,7 +301,6 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
         if (!sameEncounter)
         {
-            CancelActiveTreatment();
             _selectedAction = null;
             _selectedPart = null;
             _selectedTreatmentPart = null;
