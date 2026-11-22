@@ -47,24 +47,46 @@ public sealed partial class ChatSystem
             bodyPartQuery.Type,
             symmetry: bodyPartQuery.Symmetry).ToList();
 
-        if (targetParts.Count == 0)
-            return;
+        EntityUid? damagedPartUid = null;
+        DamageSpecifier? applied;
 
-        // A body-part type + symmetry should identify one limb. If a species has
-        // multiple matching segments, keep the attack deterministic and hit the
-        // first matching segment rather than spreading one shot across all of them.
-        var selectedPartUid = targetParts[0].Id;
-        var applied = _combatDamageable.TryChangeDamage(
-            selectedPartUid,
-            damage,
-            origin: source,
-            canMiss: false);
+        if (targetParts.Count > 0)
+        {
+            // A body-part type + symmetry should identify one limb. If a species has
+            // multiple matching segments, keep the attack deterministic and hit the
+            // first matching segment rather than spreading one shot across all of them.
+            damagedPartUid = targetParts[0].Id;
+            applied = _combatDamageable.TryChangeDamage(
+                damagedPartUid.Value,
+                damage,
+                origin: source,
+                canMiss: false);
+        }
+        else if (HasComp<TargetingComponent>(target))
+        {
+            // Some body setups keep DamageableComponent on the mob root instead of
+            // each body-part entity. In that case use the engine's native targeting
+            // route, but only when TargetingComponent is present: without it the
+            // engine silently falls back to Chest for an explicitly selected limb.
+            applied = _combatDamageable.TryChangeDamage(
+                target,
+                damage,
+                origin: source,
+                targetPart: targetPart,
+                canMiss: false);
+        }
+        else
+        {
+            // Never silently turn a missing limb into chest damage.
+            return;
+        }
 
         if (applied is null || applied.Empty)
             return;
 
-        // Check only the exact part that received damage. The wound system updates
-        // its integrity and the health analyzer's BodyStatus through normal events.
+        // Check only the selected body-part type and symmetry. When damage was
+        // applied directly, additionally require the exact same part entity.
+        // The wound system updates integrity and the health analyzer's BodyStatus.
         var woundableParts = _combatBody.GetBodyChildrenOfTypeWithComponent<WoundableComponent>(
             target,
             bodyPartQuery.Type,
@@ -72,7 +94,7 @@ public sealed partial class ChatSystem
 
         foreach (var (partUid, _, woundable) in woundableParts)
         {
-            if (partUid != selectedPartUid
+            if (damagedPartUid is { } exactPart && partUid != exactPart
                 || !woundable.CanRemove
                 || woundable.ParentWoundable is not { } parent
                 || woundable.IntegrityCap <= 0
