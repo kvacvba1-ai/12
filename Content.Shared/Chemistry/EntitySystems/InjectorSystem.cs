@@ -44,6 +44,7 @@ public sealed partial class InjectorSystem : EntitySystem
     [Dependency] private readonly SharedSolutionContainerSystem _solutionContainer = default!;
     [Dependency] private readonly StandingStateSystem _standingState = default!;
     [Dependency] private readonly UseDelaySystem _useDelay = default!;
+    [Dependency] private readonly SharedInteractionSystem _interaction = default!;
 
     public override void Initialize()
     {
@@ -199,7 +200,10 @@ public sealed partial class InjectorSystem : EntitySystem
     {
         if (!TryComp<InjectorComponent>(injector, out var component)
             || !_prototypeManager.Resolve(component.ActiveModeProtoId, out var mode)
-            || mode.Behavior is not (InjectorBehavior.Inject or InjectorBehavior.Dynamic))
+            || mode.Behavior is not (InjectorBehavior.Inject or InjectorBehavior.Dynamic)
+            || component.IgnoreMobs
+            || !HasComp<BloodstreamComponent>(target)
+            || !_interaction.InRangeUnobstructed(user, target, popup: true))
             return false;
 
         return TryMobsDoAfter((injector, component), user, target, requireHand: false);
