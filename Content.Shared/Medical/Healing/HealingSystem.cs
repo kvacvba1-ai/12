@@ -292,6 +292,41 @@ public sealed class HealingSystem : EntitySystem
         return false;
     }
 
+    /// <summary>
+    /// Starts the native healing pipeline for a limb selected by TRENCHFACE.
+    /// Healing, wound treatment, blood-loss handling and item consumption remain
+    /// owned by HealingSystem.
+    /// </summary>
+    public bool TryStartCombatPanelHealing(EntityUid user, EntityUid target, EntityUid usedItem, TargetBodyPart part)
+    {
+        if (!TryComp<BodyComponent>(target, out var body)
+            || !TryComp<HealingComponent>(usedItem, out _))
+            return false;
+
+        var (partType, symmetry) = _bodySystem.ConvertTargetBodyPart(part);
+        var selectedPart = _bodySystem.GetBodyChildrenOfType(target, partType, body, symmetry)
+            .FirstOrNull();
+
+        if (selectedPart == null || !TryComp<DamageableComponent>(selectedPart.Value.Id, out _))
+            return false;
+
+        return _doAfter.TryStartDoAfter(new DoAfterArgs(
+            EntityManager,
+            user,
+            TimeSpan.FromSeconds(1.5),
+            new HealingDoAfterEvent(selectedPart.Value.Id),
+            usedItem,
+            target: target,
+            used: usedItem)
+        {
+            BreakOnMove = true,
+            BreakOnDamage = true,
+            NeedHand = false,
+            BreakOnHandChange = false,
+            BlockDuplicate = true,
+        });
+    }
+
     private void OnBodyDoAfter(EntityUid ent, BodyComponent comp, ref HealingDoAfterEvent args)
     {
         var dontRepeat = false;
@@ -302,8 +337,9 @@ public sealed class HealingSystem : EntitySystem
         if (args.Handled || args.Cancelled)
             return;
 
-        var targetedWoundable = EntityUid.Invalid;
-        if (TryComp<TargetingComponent>(args.User, out var targeting))
+        var targetedWoundable = args.TargetedPart ?? EntityUid.Invalid;
+        if (targetedWoundable == EntityUid.Invalid
+            && TryComp<TargetingComponent>(args.User, out var targeting))
         {
             var (partType, symmetry) = _bodySystem.ConvertTargetBodyPart(targeting.Target);
             var targetedBodyPart = _bodySystem.GetBodyChildrenOfType(ent, partType, comp, symmetry).ToList().FirstOrDefault();
