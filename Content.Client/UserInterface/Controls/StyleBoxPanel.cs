@@ -215,20 +215,43 @@ public sealed class StyleBoxPanel : StyleBox
 
     private void DrawBlood(DrawingHandleScreen handle, UIBox2 box, float scale)
     {
-        // Restrained dried smears stay close to the plate edge and never cover content.
+        // Irregular dried splashes and dragged smears, concentrated around plate edges.
         var w = box.Width;
         var h = box.Height;
-        var upper = new Vector2(box.Right - w * 0.13f, box.Top + h * 0.075f);
-        handle.DrawCircle(upper, 3.2f * scale, BloodColor, true);
-        handle.DrawCircle(upper + new Vector2(-5f, 2f) * scale, 2f * scale, BloodColor, true);
-        handle.DrawLine(upper + new Vector2(1f, 2f) * scale,
-            upper + new Vector2(-2f, 9f) * scale, BloodColor);
-        handle.DrawLine(upper + new Vector2(-3f, 4f) * scale,
-            upper + new Vector2(-7f, 8f) * scale, BloodColor);
+        var darkBlood = BloodColor;
+        var driedEdge = new Color(66, 18, 20);
+        var upper = new Vector2(box.Right - w * 0.16f, box.Top + h * 0.10f);
 
-        var lower = new Vector2(box.Left + w * 0.10f, box.Bottom - h * 0.07f);
-        handle.DrawCircle(lower, 2.4f * scale, BloodColor, true);
-        handle.DrawLine(lower, lower + new Vector2(4f, 7f) * scale, BloodColor);
+        handle.DrawCircle(upper, 6.5f * scale, driedEdge, true);
+        handle.DrawCircle(upper + new Vector2(-4f, 1f) * scale, 4.2f * scale, darkBlood, true);
+        handle.DrawCircle(upper + new Vector2(5f, 3f) * scale, 2.7f * scale, darkBlood, true);
+        handle.DrawCircle(upper + new Vector2(-8f, 5f) * scale, 1.8f * scale, darkBlood, true);
+        handle.DrawLine(upper + new Vector2(0f, 4f) * scale,
+            upper + new Vector2(-3f, 19f) * scale, driedEdge);
+        handle.DrawLine(upper + new Vector2(-2f, 6f) * scale,
+            upper + new Vector2(-5f, 15f) * scale, darkBlood);
+        handle.DrawLine(upper + new Vector2(4f, 5f) * scale,
+            upper + new Vector2(8f, 13f) * scale, darkBlood);
+
+        var lower = new Vector2(box.Left + w * 0.13f, box.Bottom - h * 0.11f);
+        handle.DrawCircle(lower, 5.5f * scale, driedEdge, true);
+        handle.DrawCircle(lower + new Vector2(3f, -1f) * scale, 3.4f * scale, darkBlood, true);
+        handle.DrawCircle(lower + new Vector2(-5f, -3f) * scale, 2.1f * scale, darkBlood, true);
+        handle.DrawLine(lower + new Vector2(2f, -1f) * scale,
+            lower + new Vector2(11f, -8f) * scale, darkBlood);
+
+        // Fine droplets around the two larger stains.
+        var droplets = new (float X, float Y, float R)[]
+        {
+            (0.79f, 0.045f, 1.5f), (0.83f, 0.075f, 1.0f), (0.88f, 0.13f, 1.3f),
+            (0.11f, 0.84f, 1.2f), (0.17f, 0.89f, 0.9f), (0.21f, 0.81f, 1.1f),
+            (0.94f, 0.77f, 1.4f), (0.90f, 0.82f, 0.8f),
+        };
+        foreach (var drop in droplets)
+        {
+            var point = new Vector2(box.Left + w * drop.X, box.Top + h * drop.Y);
+            handle.DrawCircle(point, drop.R * scale, darkBlood, true);
+        }
     }
 
     private void DrawHazardStripe(DrawingHandleScreen handle, UIBox2 box, float scale)
