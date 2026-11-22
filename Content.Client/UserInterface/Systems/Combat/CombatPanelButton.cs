@@ -46,7 +46,7 @@ public sealed class CombatPanelButton : Button
         // the label area; no corner mosaics, inner stripes or gear medallions.
         var lugHeight = MathF.Min(10f, size.Y * .28f);
         var mid = size.Y * .5f;
-        handle.DrawRect(new UIBox2(-4, mid - lugHeight, 5, mid + lugHeight, ), shadow);
+        handle.DrawRect(new UIBox2(-4, mid - lugHeight, 5, mid + lugHeight), shadow);
         handle.DrawRect(new UIBox2(size.X - 5, mid - lugHeight, size.X + 4, mid + lugHeight), shadow);
         handle.DrawRect(new UIBox2(-3, mid - lugHeight + 2, 4, mid + lugHeight - 2), frame);
         handle.DrawRect(new UIBox2(size.X - 4, mid - lugHeight + 2, size.X + 3, mid + lugHeight - 2), frame);
