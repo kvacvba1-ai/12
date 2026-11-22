@@ -26,7 +26,8 @@ public abstract partial class SharedGunSystem
 
         if (takeAmmo.Ammo.Count == 0)
         {
-            RaiseLocalEvent(gun, new OnEmptyGunShotEvent(user));
+            var emptyShot = new OnEmptyGunShotEvent(user);
+            RaiseLocalEvent(gun, ref emptyShot);
             UpdateAmmoCount(gun);
             return false;
         }
@@ -50,7 +51,8 @@ public abstract partial class SharedGunSystem
                     if (!Containers.IsEntityInContainer(ammo))
                         EjectCartridge(ammo);
 
-                    RaiseLocalEvent(gun, new OnEmptyGunShotEvent(user));
+                    var emptyShot = new OnEmptyGunShotEvent(user);
+                    RaiseLocalEvent(gun, ref emptyShot);
                     UpdateAmmoCount(gun);
                     return false;
                 }
