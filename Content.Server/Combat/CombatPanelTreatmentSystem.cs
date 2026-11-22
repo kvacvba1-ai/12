@@ -21,6 +21,8 @@ namespace Content.Server.Combat;
 public sealed class CombatPanelTreatmentSystem : EntitySystem
 {
     private const float ChallengeTimeoutSeconds = 8f;
+    private const float BandageTimeoutSeconds = 45f;
+    private const float BandageMinimumWrapSeconds = 1.15f;
     private const float InjectionMarkerSpeed = 1.65f;
     private const float BandagePerfectHalfWidth = 0.07f;
     private const float BandageGoodHalfWidth = 0.20f;
@@ -78,7 +80,9 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
     {
         var now = _timing.CurTime;
         if (_challenges.TryGetValue(user, out var active)
-            && now - active.StartedAt < TimeSpan.FromSeconds(ChallengeTimeoutSeconds))
+            && now - active.StartedAt < TimeSpan.FromSeconds(active.Treatment == CombatPanelTreatmentType.Bandage
+                ? BandageTimeoutSeconds
+                : ChallengeTimeoutSeconds))
             return;
 
         if (!CanPerformTreatment(target, item, message.Treatment))
@@ -122,7 +126,10 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
             return;
 
         var elapsed = (_timing.CurTime - challenge.StartedAt).TotalSeconds;
-        if (elapsed < 0.05 || elapsed > ChallengeTimeoutSeconds)
+        var timeout = message.Treatment == CombatPanelTreatmentType.Bandage
+            ? BandageTimeoutSeconds
+            : ChallengeTimeoutSeconds;
+        if (elapsed < 0.05 || elapsed > timeout)
         {
             _challenges.Remove(user);
             return;
@@ -134,9 +141,21 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
             return;
         }
 
-        // Bandaging and injection use the dedicated medical timing bar, not the
-        // firearm's rotating hit-sector/ring mechanic. Reconstruct its marker from
-        // server time and validate the click independently of client-reported quality.
+        // A bandage is completed by winding the entire circumference with the
+        // left mouse button. The client sends Hit only after the clockwise wrap
+        // reaches 100%; the server enforces a minimum duration and never accepts
+        // client-supplied treatment quality.
+        if (message.Treatment == CombatPanelTreatmentType.Bandage)
+        {
+            _challenges.Remove(user);
+            if (elapsed < BandageMinimumWrapSeconds)
+                return;
+
+            ApplyTreatment(user, target, item, message.Part, message.Treatment, CombatPanelTreatmentQuality.Perfect);
+            return;
+        }
+
+        // Injection keeps its separate server-timed timing-bar challenge.
         var phase = (float) elapsed * InjectionMarkerSpeed % 2f;
         var markerPosition = 1f - MathF.Abs(phase - 1f);
         var distance = MathF.Abs(markerPosition - 0.5f);
