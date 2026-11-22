@@ -9,6 +9,7 @@ using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
 using Content.Shared.Mobs.Components;
 using Content.Shared._Shitmed.Targeting;
+using Robust.Shared.Prototypes;
 
 namespace Content.Server.Combat;
 
