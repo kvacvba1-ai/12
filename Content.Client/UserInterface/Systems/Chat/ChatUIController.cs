@@ -1395,6 +1395,32 @@ public sealed partial class ChatUIController : UIController
             // Only expose real healing items that are currently held. HealingSystem
             // handles UseInHandEvent and performs the actual self-treatment, including
             // body-part wounds, bruises and burns.
+            if (_ent.HasComponent<InjectorComponent>(item)
+                && TryGetCombatPanelHand(user, item, out var injectorHand))
+            {
+                var capturedInjector = item;
+                var capturedInjectorName = itemName;
+                var capturedHand = injectorHand;
+                items.Add((itemName, () =>
+                {
+                    if (_player.LocalEntity is not { } currentUser
+                        || !IsCombatPanelItemAvailable(currentUser, capturedInjector)
+                        || _ent.System<HandsSystem>().GetHeldItem((currentUser, _ent.GetComponent<HandsComponent>(currentUser)), capturedHand) != capturedInjector)
+                        return;
+
+                    var coordinates = _ent.GetComponent<TransformComponent>(currentUser).Coordinates;
+                    _ent.System<SharedInteractionSystem>().InteractUsing(
+                        currentUser,
+                        capturedInjector,
+                        currentUser,
+                        coordinates,
+                        checkCanUse: false);
+
+                    _combatPanelWindow?.TryRequestEmote(
+                        $"пытается сделать себе инъекцию с помощью «{capturedInjectorName}» в рамках столкновения с «{opponentName}»");
+                }));
+            }
+
             if (_ent.HasComponent<HealingComponent>(item)
                 && TryGetCombatPanelHand(user, item, out var medicalHand))
             {
