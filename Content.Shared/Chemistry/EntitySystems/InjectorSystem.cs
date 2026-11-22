@@ -202,7 +202,16 @@ public sealed partial class InjectorSystem : EntitySystem
             || mode.Behavior is not (InjectorBehavior.Inject or InjectorBehavior.Dynamic))
             return false;
 
-        return TryMobsDoAfter((injector, component), user, target);
+        // The selected injector may be stored in a pocket. DoAfterArgs copies
+        // these flags when it starts, so restore the component immediately after.
+        var needHand = component.NeedHand;
+        var breakOnHandChange = component.BreakOnHandChange;
+        component.NeedHand = false;
+        component.BreakOnHandChange = false;
+        var started = TryMobsDoAfter((injector, component), user, target);
+        component.NeedHand = needHand;
+        component.BreakOnHandChange = breakOnHandChange;
+        return started;
     }
 
     #region Mob Interaction
