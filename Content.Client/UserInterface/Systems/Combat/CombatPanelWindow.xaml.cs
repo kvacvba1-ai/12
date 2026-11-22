@@ -63,12 +63,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
         MiniGameHitButton.StyleClasses.Add("CombatPrimary");
         TabContainer.CurrentTab = 0;
         TabContainer.TabsVisible = false;
+        ApplyTabVisibility(0);
         CombatNavActionsButton.OnPressed += _ => SelectTab(0);
         CombatNavStatusButton.OnPressed += _ => SelectTab(1);
         CombatNavEquipmentButton.OnPressed += _ => SelectTab(2);
         UpdateTabNavigation();
         Resizable = true;
-        MinSize = new Vector2(540, 560);
+        MinSize = new Vector2(560, 600);
         CloseWindowButton.OnPressed += _ => Close();
         MinimizeWindowButton.OnPressed += _ =>
         {
@@ -192,8 +193,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
     // Keep the close-button corner outside the drag region so its click remains unambiguous.
     protected override DragMode GetDragModeFor(Vector2 relativeMousePos)
     {
-        const float edge = 7f;
-        const float headerHeight = 54f;
+        // A wider hit target makes resizing practical on touchpads and high-DPI displays.
+        const float edge = 14f;
+        const float headerHeight = 58f;
 
         var mode = DragMode.None;
         if (relativeMousePos.Y < edge)
@@ -301,8 +303,22 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
     private void SelectTab(int index)
     {
+        index = Math.Clamp(index, 0, 2);
         TabContainer.CurrentTab = index;
+        ApplyTabVisibility(index);
         UpdateTabNavigation();
+    }
+
+    /// <summary>
+    /// The custom navigation rail replaces TabContainer's built-in tabs.
+    /// Explicit visibility prevents inactive pages from bleeding through
+    /// when the container is resized or its children are re-laid out.
+    /// </summary>
+    private void ApplyTabVisibility(int index)
+    {
+        CombatTab.Visible = index == 0;
+        StatusTab.Visible = index == 1;
+        EquipmentTab.Visible = index == 2;
     }
 
     private void UpdateTabNavigation()
