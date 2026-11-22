@@ -42,7 +42,7 @@ public sealed partial class ChatSystem
             targetPart: targetPart,
             canMiss: false);
 
-        if (applied is null || applied.Value.Empty)
+        if (applied is null || applied.Empty)
             return;
 
         // The wound system updates TargetingComponent.BodyStatus as integrity changes.
