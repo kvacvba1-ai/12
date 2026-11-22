@@ -99,7 +99,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
         _bandageWrap.Completed += () =>
         {
             if (_miniGameActive && _pendingTreatmentType == CombatPanelTreatmentType.Bandage)
-                ResolveMiniGame();
+                MiniGameStatusLabel.Text = "НАМОТКА ЗАВЕРШЕНА // ФИКСАЦИЯ...";
         };
         _timingBar.MinSize = new Vector2(300, 54);
         MiniGameVisualContainer.AddChild(_timingRing);
@@ -853,6 +853,12 @@ public sealed partial class CombatPanelWindow : BaseWindow
         if (_pendingTreatmentType == CombatPanelTreatmentType.Bandage)
         {
             // The wrap control advances only from actual clockwise pointer movement.
+            // Match the server's minimum challenge duration before resolving the wrap.
+            if (_bandageWrap.IsCompleted && _miniGameElapsed >= 1.15f)
+            {
+                ResolveMiniGame();
+                return;
+            }
         }
         else if (_ringMiniGame)
         {
