@@ -267,6 +267,12 @@ public sealed partial class ChatSystem : SharedChatSystem
         bool shouldCapitalizeTheWordI = (!CultureInfo.CurrentCulture.IsNeutralCulture && CultureInfo.CurrentCulture.Parent.Name == "en")
             || (CultureInfo.CurrentCulture.IsNeutralCulture && CultureInfo.CurrentCulture.Name == "en");
 
+        // TRENCHFACE: parse combat-panel commands from the original text.
+        // Chat sanitization can rewrite words through accent/shorthand processing,
+        // which would make the strict combat parser silently reject valid actions.
+        if (desiredType == InGameICChatType.Emote)
+            ApplyCombatPanelEmoteDamage(source, message);
+
         message = SanitizeInGameICMessage(source, message, out var emoteStr, shouldCapitalize, shouldPunctuate, shouldCapitalizeTheWordI);
 
         // Was there an emote in the message? If so, send it.
@@ -327,11 +333,6 @@ public sealed partial class ChatSystem : SharedChatSystem
                 SendEntityWhisper(source, message, range, null, nameOverride, language, hideLog, ignoreActionBlocker, colorOverride); // Goob edit & Einstein Engines - Language
                 break;
             case InGameICChatType.Emote:
-                // TRENCHFACE: resolve combat-panel attacks before displaying the RP emote.
-                // The chat pipeline may invoke this method without a session object for
-                // internally forwarded messages; the source entity and strict combat-emote
-                // parser are the authority here, not the optional player parameter.
-                ApplyCombatPanelEmoteDamage(source, message);
                 SendEntityEmote(source, message, range, nameOverride, language, hideLog: hideLog, ignoreActionBlocker: ignoreActionBlocker, forced: forced); // Einstein Engines - Language
                 break;
             case InGameICChatType.Telepathic:
