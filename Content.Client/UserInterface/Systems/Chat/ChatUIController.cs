@@ -1345,6 +1345,7 @@ public sealed partial class ChatUIController : UIController
             || !_ent.TryGetComponent<InventoryComponent>(user, out var inventory))
         {
             _combatPanelWindow?.SetMedicalItems(Array.Empty<(string Name, Action Use)>());
+            _combatPanelWindow?.SetMedicalTreatmentItems(Array.Empty<(string Name, EntityUid Item, CombatPanelTreatmentType Type)>());
             return;
         }
 
