@@ -24,6 +24,7 @@ using Content.Shared.Administration;
 using Content.Shared.CCVar;
 using Content.Shared.Chat;
 using Content.Shared.Chemistry.Components;
+using Content.Shared.Chemistry.Prototypes;
 using Content.Shared.Combat;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
@@ -1389,14 +1390,18 @@ public sealed partial class ChatUIController : UIController
             // independently validates ownership, target and component type.
             if (_ent.HasComponent<HealingComponent>(item))
                 treatmentItems.Add((itemName, item, CombatPanelTreatmentType.Bandage));
-            if (_ent.HasComponent<InjectorComponent>(item))
+            if (_ent.TryGetComponent<InjectorComponent>(item, out var treatmentInjector)
+                && _prototypeManager.Resolve(treatmentInjector.ActiveModeProtoId, out var treatmentMode)
+                && treatmentMode.Behavior is InjectorBehavior.Inject or InjectorBehavior.Dynamic)
                 treatmentItems.Add((itemName, item, CombatPanelTreatmentType.Injection));
 
             // Only expose real healing items that are currently held. HealingSystem
             // handles UseInHandEvent and performs the actual self-treatment, including
             // body-part wounds, bruises and burns.
-            if (_ent.HasComponent<InjectorComponent>(item)
-                && TryGetCombatPanelHand(user, item, out var injectorHand))
+            if (_ent.TryGetComponent<InjectorComponent>(item, out var selfInjector)
+                && _prototypeManager.Resolve(selfInjector.ActiveModeProtoId, out var selfInjectorMode)
+                && selfInjectorMode.Behavior is InjectorBehavior.Inject or InjectorBehavior.Dynamic
+                && TryGetCombatPanelHand(user, item, out _))
             {
                 var capturedInjector = item;
                 var capturedInjectorName = itemName;
