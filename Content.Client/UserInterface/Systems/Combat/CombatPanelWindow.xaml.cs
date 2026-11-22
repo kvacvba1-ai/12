@@ -374,7 +374,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
         foreach (var (name, details, isAvailable, use) in items)
         {
-            var button = new Button
+            var button = new CombatPanelButton
             {
                 Text = $"{name} - {details}",
                 HorizontalExpand = true,
@@ -410,7 +410,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
         foreach (var (name, use) in items)
         {
-            var button = new Button
+            var button = new CombatPanelButton
             {
                 Text = $"Оказать себе помощь: {name}",
                 HorizontalExpand = true,
