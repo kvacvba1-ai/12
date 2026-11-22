@@ -315,7 +315,7 @@ public sealed class HealingSystem : EntitySystem
             (usedItem, healing),
             (target, (DamageableComponent?) damageable),
             user,
-            selectedPart.Value.Id);
+            part);
     }
 
     private void OnBodyDoAfter(EntityUid ent, BodyComponent comp, ref HealingDoAfterEvent args)
@@ -328,9 +328,15 @@ public sealed class HealingSystem : EntitySystem
         if (args.Handled || args.Cancelled)
             return;
 
-        var targetedWoundable = args.TargetedPart ?? EntityUid.Invalid;
-        if (targetedWoundable == EntityUid.Invalid
-            && TryComp<TargetingComponent>(args.User, out var targeting))
+        var targetedWoundable = EntityUid.Invalid;
+        if (args.TargetedPart is { } selectedPart)
+        {
+            var (partType, symmetry) = _bodySystem.ConvertTargetBodyPart(selectedPart);
+            var selectedBodyPart = _bodySystem.GetBodyChildrenOfType(ent, partType, comp, symmetry).FirstOrNull();
+            if (selectedBodyPart is not null)
+                targetedWoundable = selectedBodyPart.Value.Id;
+        }
+        else if (TryComp<TargetingComponent>(args.User, out var targeting))
         {
             var (partType, symmetry) = _bodySystem.ConvertTargetBodyPart(targeting.Target);
             var targetedBodyPart = _bodySystem.GetBodyChildrenOfType(ent, partType, comp, symmetry).ToList().FirstOrDefault();
@@ -526,7 +532,14 @@ public sealed class HealingSystem : EntitySystem
     }
     // Goobstation end
 
-    private bool TryHeal(Entity<HealingComponent> healing, Entity<DamageableComponent?> target, EntityUid user, EntityUid? targetedPart = null)
+    private EntityUid? ResolveSelectedBodyPart(EntityUid target, BodyComponent body, TargetBodyPart part)
+    {
+        var (partType, symmetry) = _bodySystem.ConvertTargetBodyPart(part);
+        var selectedPart = _bodySystem.GetBodyChildrenOfType(target, partType, body, symmetry).FirstOrNull();
+        return selectedPart?.Id;
+    }
+
+    private bool TryHeal(Entity<HealingComponent> healing, Entity<DamageableComponent?> target, EntityUid user, TargetBodyPart? targetedPart = null)
     {
         if (!Resolve(target, ref target.Comp, false))
             return false;
@@ -549,7 +562,8 @@ public sealed class HealingSystem : EntitySystem
             HasDamage(healing, (target.Owner, target.Comp)) ||
             TryComp<BodyComponent>(target, out var bodyComp) && // I'm paranoid, sorry.
             (targetedPart is { } selectedPart
-                ? IsBodyDamaged((target, bodyComp), null, healing.Comp, selectedPart)
+                ? ResolveSelectedBodyPart(target.Owner, bodyComp, selectedPart) is { } selectedBodyPart
+                    && IsBodyDamaged((target, bodyComp), null, healing.Comp, selectedBodyPart)
                 : IsBodyDamaged((target, bodyComp), user, healing.Comp)) ||
             healing.Comp.ModifyBloodLevel < 0 // Special case if healing item can restore lost blood... Goobstation edit
                 && TryComp<BloodstreamComponent>(target, out var bloodstream)
