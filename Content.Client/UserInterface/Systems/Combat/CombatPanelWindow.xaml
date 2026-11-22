@@ -6,118 +6,123 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                           xmlns:combat="clr-namespace:Content.Client.UserInterface.Systems.Combat">
     <PanelContainer Name="WindowFrame" HorizontalExpand="True" VerticalExpand="True">
         <BoxContainer Orientation="Vertical" SeparationOverride="0" HorizontalExpand="True" VerticalExpand="True">
-        <PanelContainer Name="WindowHeader" HorizontalExpand="True">
-            <BoxContainer Orientation="Horizontal" SeparationOverride="6" Margin="10 7" HorizontalExpand="True">
-                <BoxContainer Orientation="Vertical" SeparationOverride="1" HorizontalExpand="True">
-                    <Label Text="TRENCHFACE // COMBAT SYSTEM" StyleClasses="LabelHeading" />
-                    <Label Text="TACTICAL INTERFACE  •  SECURE CHANNEL" StyleClasses="LabelSmall" />
-                </BoxContainer>
-                <Label Text="● ONLINE" StyleClasses="LabelSmall" />
-                <combat:CombatPanelButton Name="MinimizeWindowButton" Text="—" MinSize="34 28" />
-                <combat:CombatPanelButton Name="CloseWindowButton" Text="✕" MinSize="34 28" />
-            </BoxContainer>
-        </PanelContainer>
-        <BoxContainer Name="WindowBody" Orientation="Vertical" SeparationOverride="5" Margin="5" HorizontalExpand="True" VerticalExpand="True">
-        <PanelContainer Name="HeaderFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
-            <BoxContainer Orientation="Vertical" SeparationOverride="4" Margin="9" HorizontalExpand="True">
-                <Label Text="БОЕВОЙ ТЕРМИНАЛ // TRENCHFACE" StyleClasses="LabelHeading" />
-                <Label Text="БОЕВОЙ РЕЖИМ // ТОЛЬКО ДЛЯ ПЕРСОНАЛА" StyleClasses="LabelSmall" />
-                <Label Name="TargetNameLabel" Text="ЦЕЛЬ // НЕИЗВЕСТНО" StyleClasses="LabelBig" />
-                <Label Name="EngagementInfoLabel" Text="НЕТ АКТИВНОГО СТОЛКНОВЕНИЯ" />
-                <PanelContainer StyleClasses="LowDivider" />
-                <Label Text="СНАРЯЖЕНИЕ // СТАТУС" StyleClasses="LabelHeading" />
-                <Label Name="WeaponInfoLabel" Text="РУКИ // ПУСТО" />
-                <Label Text="БОЕВОЙ МОДУЛЬ // АКТИВЕН" StyleClasses="LabelSmall" />
-            </BoxContainer>
-        </PanelContainer>
-
-        <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True">
-            <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
-                <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
-                    <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
-                        <Label Text="ВЫБОР БОЕВОГО ДЕЙСТВИЯ" StyleClasses="LabelHeading" />
-                        <PanelContainer Name="ActionFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
-                            <GridContainer Columns="2" Margin="6" HorizontalExpand="True">
-                                <combat:CombatPanelButton Name="ShootButton" Text="[01] ОГНЕСТРЕЛЬНОЕ ОРУЖИЕ" />
-                                <combat:CombatPanelButton Name="StabButton" Text="[02] УДАР ОРУЖИЕМ" />
-                                <combat:CombatPanelButton Name="PunchButton" Text="[03] УДАР КУЛАКОМ" />
-                                <combat:CombatPanelButton Name="KickButton" Text="[04] УДАР НОГОЙ" />
-                            </GridContainer>
-                        </PanelContainer>
-
-                        <PanelContainer StyleClasses="LowDivider" />
-                        <PanelContainer Name="TargetZoneFrame" StyleClasses="BackgroundDark" HorizontalExpand="True" Visible="False">
-                            <BoxContainer Name="BodyPartSelectionContainer" Orientation="Vertical" SeparationOverride="4" Margin="6" HorizontalExpand="True">
-                            <Label Text="ЗОНА ПОПАДАНИЯ" StyleClasses="LabelHeading" />
-                            <GridContainer Columns="3" HorizontalExpand="True">
-                                <combat:CombatPanelButton Name="HeadButton" Text="ГОЛОВА" />
-                                <combat:CombatPanelButton Name="ChestButton" Text="КОРПУС" />
-                                <combat:CombatPanelButton Name="LeftArmButton" Text="ЛЕВАЯ РУКА" />
-                                <combat:CombatPanelButton Name="RightArmButton" Text="ПРАВАЯ РУКА" />
-                                <combat:CombatPanelButton Name="LeftLegButton" Text="ЛЕВАЯ НОГА" />
-                                <combat:CombatPanelButton Name="RightLegButton" Text="ПРАВАЯ НОГА" />
-                            </GridContainer>
-                            </BoxContainer>
-                        </PanelContainer>
-                        <Label Name="SelectionLabel" Text="ВЫБЕРИТЕ ДЕЙСТВИЕ И ЗОНУ" StyleClasses="LabelHeading" />
-                        <combat:CombatPanelButton Name="PerformButton" Text="ПОДТВЕРДИТЬ ДЕЙСТВИЕ" Disabled="True" />
+            <PanelContainer Name="WindowHeader" HorizontalExpand="True">
+                <BoxContainer Orientation="Horizontal" SeparationOverride="6" Margin="8 5" HorizontalExpand="True">
+                    <BoxContainer Orientation="Vertical" SeparationOverride="0" HorizontalExpand="True">
+                        <Label Text="TRENCHFACE  /  FIELD UNIT" StyleClasses="LabelHeading" />
+                        <Label Text="TACTICAL RESPONSE SYSTEM" StyleClasses="LabelSmall" />
                     </BoxContainer>
-                </ScrollContainer>
+                    <combat:CombatPanelButton Name="MinimizeWindowButton" Text="—" MinSize="30 26" />
+                    <combat:CombatPanelButton Name="CloseWindowButton" Text="×" MinSize="30 26" />
+                </BoxContainer>
             </PanelContainer>
 
-            <PanelContainer Name="StatusTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
-                <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
-                    <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
-                        <Label Text="ДИАГНОСТИКА ЦЕЛИ" StyleClasses="LabelHeading" />
-                        <BoxContainer Orientation="Horizontal" SeparationOverride="10" HorizontalExpand="True">
-                            <SpriteView Name="HealthDollView" SetSize="112 168" Visible="False" />
-                            <Label Name="HealthAnalyzerLabel" Text="НЕТ ДАННЫХ О СОСТОЯНИИ" HorizontalExpand="True" />
+            <BoxContainer Name="WindowBody" Orientation="Vertical" SeparationOverride="4" Margin="4" HorizontalExpand="True" VerticalExpand="True">
+                <PanelContainer Name="HeaderFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
+                    <BoxContainer Orientation="Vertical" SeparationOverride="2" Margin="7" HorizontalExpand="True">
+                        <Label Name="TargetNameLabel" Text="ЦЕЛЬ / НЕИЗВЕСТНО" StyleClasses="LabelHeading" />
+                        <BoxContainer Orientation="Horizontal" SeparationOverride="12" HorizontalExpand="True">
+                            <Label Name="EngagementInfoLabel" Text="НЕТ АКТИВНОГО СТОЛКНОВЕНИЯ" StyleClasses="LabelSmall" HorizontalExpand="True" />
+                            <Label Name="WeaponInfoLabel" Text="РУКИ / ПУСТО" StyleClasses="LabelSmall" />
                         </BoxContainer>
-                        <Label Name="BodyStatusLabel" Text="НЕТ ДАННЫХ О ПОВРЕЖДЕНИЯХ ПО ЧАСТЯМ ТЕЛА" StyleClasses="LabelSmall" />
                     </BoxContainer>
-                </ScrollContainer>
-            </PanelContainer>
+                </PanelContainer>
 
-            <PanelContainer Name="EquipmentTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
-                <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
-                    <BoxContainer Orientation="Vertical" SeparationOverride="7" Margin="9" HorizontalExpand="True">
-                        <Label Text="МЕДИЦИНСКОЕ СНАРЯЖЕНИЕ" StyleClasses="LabelHeading" />
-                        <Label Name="MedicalEmptyLabel" Text="МЕДИЦИНСКИЕ СРЕДСТВА НЕ ОБНАРУЖЕНЫ" StyleClasses="LabelSmall" />
-                        <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
-                        <PanelContainer StyleClasses="LowDivider" />
-                        <Label Text="БОЕПРИПАСЫ И РАСХОДНИКИ" StyleClasses="LabelHeading" />
-                        <combat:CombatPanelButton Name="AmmunitionToggleButton" Text="ПОКАЗАТЬ СНАРЯЖЕНИЕ" />
-                        <Label Name="AmmunitionEmptyLabel" Text="БОЕПРИПАСЫ И РАСХОДНИКИ НЕ ОБНАРУЖЕНЫ" StyleClasses="LabelSmall" />
-                        <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
+                <BoxContainer Orientation="Horizontal" SeparationOverride="4" HorizontalExpand="True">
+                    <combat:CombatPanelButton Name="CombatNavActionsButton" Text="БОЙ" MinSize="0 27" HorizontalExpand="True" />
+                    <combat:CombatPanelButton Name="CombatNavStatusButton" Text="ТЕЛО" MinSize="0 27" HorizontalExpand="True" />
+                    <combat:CombatPanelButton Name="CombatNavEquipmentButton" Text="СНАРЯГА" MinSize="0 27" HorizontalExpand="True" />
+                </BoxContainer>
+                <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True">
+                    <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
+                        <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
+                            <BoxContainer Orientation="Vertical" SeparationOverride="5" Margin="7" HorizontalExpand="True">
+                                <Label Text="БОЕВОЕ ДЕЙСТВИЕ" StyleClasses="LabelHeading" />
+                                <PanelContainer Name="ActionFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
+                                    <GridContainer Columns="2" Margin="5" HorizontalExpand="True">
+                                        <combat:CombatPanelButton Name="ShootButton" Text="ВЫСТРЕЛ" />
+                                        <combat:CombatPanelButton Name="StabButton" Text="УДАР ОРУЖИЕМ" />
+                                        <combat:CombatPanelButton Name="PunchButton" Text="КУЛАК" />
+                                        <combat:CombatPanelButton Name="KickButton" Text="НОГА" />
+                                    </GridContainer>
+                                </PanelContainer>
+                                <PanelContainer Name="TargetZoneFrame" StyleClasses="BackgroundDark" HorizontalExpand="True" Visible="False">
+                                    <BoxContainer Name="BodyPartSelectionContainer" Orientation="Vertical" SeparationOverride="3" Margin="5" HorizontalExpand="True">
+                                        <Label Text="ЗОНА ПОРАЖЕНИЯ" StyleClasses="LabelHeading" />
+                                        <GridContainer Columns="3" HorizontalExpand="True">
+                                            <combat:CombatPanelButton Name="HeadButton" Text="ГОЛОВА" />
+                                            <combat:CombatPanelButton Name="ChestButton" Text="КОРПУС" />
+                                            <combat:CombatPanelButton Name="LeftArmButton" Text="ЛЕВАЯ РУКА" />
+                                            <combat:CombatPanelButton Name="RightArmButton" Text="ПРАВАЯ РУКА" />
+                                            <combat:CombatPanelButton Name="LeftLegButton" Text="ЛЕВАЯ НОГА" />
+                                            <combat:CombatPanelButton Name="RightLegButton" Text="ПРАВАЯ НОГА" />
+                                        </GridContainer>
+                                    </BoxContainer>
+                                </PanelContainer>
+                                <Label Name="SelectionLabel" Text="ВЫБЕРИТЕ ДЕЙСТВИЕ И ЗОНУ" StyleClasses="LabelHeading" />
+                                <combat:CombatPanelButton Name="PerformButton" Text="ПОДТВЕРДИТЬ" Disabled="True" />
+                            </BoxContainer>
+                        </ScrollContainer>
+                    </PanelContainer>
+
+                    <PanelContainer Name="StatusTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
+                        <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
+                            <BoxContainer Orientation="Vertical" SeparationOverride="5" Margin="7" HorizontalExpand="True">
+                                <Label Text="СОСТОЯНИЕ ЦЕЛИ" StyleClasses="LabelHeading" />
+                                <BoxContainer Orientation="Horizontal" SeparationOverride="8" HorizontalExpand="True">
+                                    <SpriteView Name="HealthDollView" SetSize="92 138" Visible="False" />
+                                    <BoxContainer Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True">
+                                        <Label Name="HealthAnalyzerLabel" Text="НЕТ ДАННЫХ О СОСТОЯНИИ" HorizontalExpand="True" />
+                                        <Label Text="ОБЩАЯ ДИАГНОСТИКА" StyleClasses="LabelSmall" />
+                                    </BoxContainer>
+                                </BoxContainer>
+                                <PanelContainer StyleClasses="LowDivider" />
+                                <Label Text="ПОВРЕЖДЕНИЯ ПО ЧАСТЯМ ТЕЛА" StyleClasses="LabelHeading" />
+                                <GridContainer Name="BodyPartStatusContainer" Columns="2" HorizontalExpand="True" />
+                                <Label Name="BodyStatusLabel" Text="НЕТ ДАННЫХ ПО ЧАСТЯМ ТЕЛА" StyleClasses="LabelSmall" />
+                            </BoxContainer>
+                        </ScrollContainer>
+                    </PanelContainer>
+
+                    <PanelContainer Name="EquipmentTab" StyleClasses="BackgroundDark" HorizontalExpand="True" VerticalExpand="True">
+                        <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
+                            <BoxContainer Orientation="Vertical" SeparationOverride="5" Margin="7" HorizontalExpand="True">
+                                <Label Text="МЕДИЦИНСКОЕ СНАРЯЖЕНИЕ" StyleClasses="LabelHeading" />
+                                <Label Name="MedicalEmptyLabel" Text="СРЕДСТВА НЕ ОБНАРУЖЕНЫ" StyleClasses="LabelSmall" />
+                                <BoxContainer Name="MedicalItemsContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" />
+                                <PanelContainer StyleClasses="LowDivider" />
+                                <Label Text="БОЕПРИПАСЫ" StyleClasses="LabelHeading" />
+                                <combat:CombatPanelButton Name="AmmunitionToggleButton" Text="ПОКАЗАТЬ" />
+                                <Label Name="AmmunitionEmptyLabel" Text="БОЕПРИПАСЫ НЕ ОБНАРУЖЕНЫ" StyleClasses="LabelSmall" />
+                                <BoxContainer Name="AmmunitionContainer" Orientation="Vertical" SeparationOverride="3" HorizontalExpand="True" Visible="False" />
+                            </BoxContainer>
+                        </ScrollContainer>
+                    </PanelContainer>
+                </TabContainer>
+
+                <PanelContainer Name="MiniGameContainer" StyleClasses="BackgroundDark" HorizontalExpand="True" Visible="False">
+                    <BoxContainer Orientation="Vertical" SeparationOverride="4" Margin="7" HorizontalExpand="True">
+                        <Label Name="MiniGameTitleLabel" Text="ПРОВЕРКА МОМЕНТА" StyleClasses="LabelHeading" />
+                        <Label Name="MiniGameHintLabel" Text="ДОЖДИТЕСЬ ПОДХОДЯЩЕГО МОМЕНТА" />
+                        <BoxContainer Name="MiniGameVisualContainer" Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Center" MinSize="190 190" />
+                        <Label Name="MiniGameStatusLabel" Text="ГОТОВНОСТЬ" StyleClasses="LabelHeading" />
+                        <combat:CombatPanelButton Name="MiniGameHitButton" Text="ЗАФИКСИРОВАТЬ" />
                     </BoxContainer>
-                </ScrollContainer>
-            </PanelContainer>
-        </TabContainer>
+                </PanelContainer>
 
-        <PanelContainer Name="MiniGameContainer" StyleClasses="BackgroundDark" HorizontalExpand="True" Visible="False">
-            <BoxContainer Orientation="Vertical" SeparationOverride="5" Margin="9" HorizontalExpand="True">
-                <Label Name="MiniGameTitleLabel" Text="ПРОВЕРКА МОМЕНТА" StyleClasses="LabelHeading" />
-                <Label Name="MiniGameHintLabel" Text="ДОЖДИТЕСЬ ПОДХОДЯЩЕГО МОМЕНТА" />
-                <BoxContainer Name="MiniGameVisualContainer" Orientation="Vertical" HorizontalExpand="True" HorizontalAlignment="Center" MinSize="190 190" />
-                <Label Name="MiniGameStatusLabel" Text="ГОТОВНОСТЬ" StyleClasses="LabelHeading" />
-                <combat:CombatPanelButton Name="MiniGameHitButton" Text="ЗАФИКСИРОВАТЬ МОМЕНТ" />
+                <PanelContainer Name="TurnFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
+                    <GridContainer Columns="2" Margin="6" HorizontalExpand="True">
+                        <BoxContainer Orientation="Vertical" SeparationOverride="1">
+                            <Label Text="ХОД" StyleClasses="LabelSmall" />
+                            <Label Name="TurnCountLabel" Text="2 / 2" StyleClasses="LabelBig" />
+                        </BoxContainer>
+                        <BoxContainer Orientation="Vertical" SeparationOverride="1">
+                            <Label Text="СТАТУС" StyleClasses="LabelSmall" />
+                            <Label Name="TurnStateLabel" Text="ГОТОВ" />
+                        </BoxContainer>
+                    </GridContainer>
+                </PanelContainer>
             </BoxContainer>
-        </PanelContainer>
-
-        <PanelContainer Name="TurnFrame" StyleClasses="BackgroundDark" HorizontalExpand="True">
-            <GridContainer Columns="2" Margin="8" HorizontalExpand="True">
-                <BoxContainer Orientation="Vertical" SeparationOverride="2">
-                    <Label Text="ОСТАВШИЕСЯ ДЕЙСТВИЯ" StyleClasses="LabelHeading" />
-                    <Label Name="TurnCountLabel" Text="ДЕЙСТВИЯ // 2 ИЗ 2" StyleClasses="LabelBig" />
-                </BoxContainer>
-                <BoxContainer Orientation="Vertical" SeparationOverride="2">
-                    <Label Text="СОСТОЯНИЕ БОЯ" StyleClasses="LabelHeading" />
-                    <Label Name="TurnStateLabel" Text="ГОТОВ К ДЕЙСТВИЮ" />
-                    <Label Text="БОЕВОЙ МОДУЛЬ // TRENCHFACE" StyleClasses="LabelSmall" />
-                </BoxContainer>
-            </GridContainer>
-        </PanelContainer>
         </BoxContainer>
-    </BoxContainer>
     </PanelContainer>
 </combat:CombatPanelWindow>

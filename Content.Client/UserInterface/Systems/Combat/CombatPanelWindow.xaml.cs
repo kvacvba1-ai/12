@@ -39,6 +39,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
     private int _weaponShots = 1;
     private int _ringCompleted;
     private int _ringSuccesses;
+    private string? _lastBodyDetails;
 
     public EntityUid? Target => _target;
     public bool IsIncoming => _isIncoming;
@@ -56,8 +57,13 @@ public sealed partial class CombatPanelWindow : BaseWindow
         PerformButton.StyleClasses.Add("CombatPrimary");
         MiniGameHitButton.StyleClasses.Add("CombatPrimary");
         TabContainer.CurrentTab = 0;
+        TabContainer.TabsVisible = false;
+        CombatNavActionsButton.OnPressed += _ => SelectTab(0);
+        CombatNavStatusButton.OnPressed += _ => SelectTab(1);
+        CombatNavEquipmentButton.OnPressed += _ => SelectTab(2);
+        UpdateTabNavigation();
         Resizable = true;
-        MinSize = new Vector2(620, 660);
+        MinSize = new Vector2(540, 560);
         CloseWindowButton.OnPressed += _ => Close();
         MinimizeWindowButton.OnPressed += _ =>
         {
@@ -190,9 +196,9 @@ public sealed partial class CombatPanelWindow : BaseWindow
         StatusTab.PanelOverride = insetFrame;
         EquipmentTab.PanelOverride = insetFrame;
 
-        TabContainer.SetTabTitle(CombatTab, "Действия");
-        TabContainer.SetTabTitle(StatusTab, "Состояние");
-        TabContainer.SetTabTitle(EquipmentTab, "Снаряжение");
+        TabContainer.SetTabTitle(CombatTab, "Бой");
+        TabContainer.SetTabTitle(StatusTab, "Тело");
+        TabContainer.SetTabTitle(EquipmentTab, "Снаряга");
 
         ShootButton.OnPressed += _ => SelectAction("shoots");
         StabButton.OnPressed += _ => SelectAction("stabs");
@@ -333,8 +339,67 @@ public sealed partial class CombatPanelWindow : BaseWindow
 
     public void SetHealthAnalyzer(string status, string damage, string bodyDetails)
     {
-        HealthAnalyzerLabel.Text = $"Состояние: {status}\nОбщие повреждения: {damage}";
+        HealthAnalyzerLabel.Text = $"{status.ToUpperInvariant()}  /  {damage}";
+        if (string.Equals(_lastBodyDetails, bodyDetails, StringComparison.Ordinal))
+            return;
+
+        _lastBodyDetails = bodyDetails;
+        BodyPartStatusContainer.RemoveAllChildren();
+        var entries = bodyDetails.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var entry in entries)
+        {
+            var separator = entry.IndexOf(':');
+            if (separator <= 0)
+                continue;
+
+            var part = entry[..separator].Trim();
+            var severity = entry[(separator + 1)..].Trim();
+            var label = new Label
+            {
+                Text = $"{part.ToUpperInvariant()}  /  {severity.ToUpperInvariant()}",
+                HorizontalExpand = true,
+            };
+            label.StyleClasses.Add("LabelSmall");
+            var value = severity.ToLowerInvariant();
+            label.FontColorOverride = value.Contains("тяж") || value.Contains("крит")
+                || value.Contains("severe") || value.Contains("critical") || value.Contains("major")
+                ? new Color(177, 78, 61)
+                : value.Contains("сред") || value.Contains("умер")
+                    || value.Contains("moderate") || value.Contains("medium")
+                    ? new Color(190, 145, 83)
+                    : new Color(178, 178, 151);
+            BodyPartStatusContainer.AddChild(label);
+        }
+
+        var hasParts = BodyPartStatusContainer.ChildCount > 0;
+        BodyStatusLabel.Visible = !hasParts;
         BodyStatusLabel.Text = bodyDetails;
+    }
+
+    private void SelectTab(int index)
+    {
+        TabContainer.CurrentTab = index;
+        UpdateTabNavigation();
+    }
+
+    private void UpdateTabNavigation()
+    {
+        SetTabButtonActive(CombatNavActionsButton, TabContainer.CurrentTab == 0);
+        SetTabButtonActive(CombatNavStatusButton, TabContainer.CurrentTab == 1);
+        SetTabButtonActive(CombatNavEquipmentButton, TabContainer.CurrentTab == 2);
+    }
+
+    private static void SetTabButtonActive(CombatPanelButton button, bool active)
+    {
+        if (active)
+        {
+            if (!button.StyleClasses.Contains("CombatTabActive"))
+                button.StyleClasses.Add("CombatTabActive");
+        }
+        else
+        {
+            button.StyleClasses.Remove("CombatTabActive");
+        }
     }
 
     public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)

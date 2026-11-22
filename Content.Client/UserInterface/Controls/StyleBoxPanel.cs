@@ -124,6 +124,49 @@ public sealed class StyleBoxPanel : StyleBox
         var h = box.Height;
         var grainA = new Color(43, 51, 49);
         var grainB = new Color(17, 23, 23);
+
+        // Broad, low-contrast tonal plates make the surface read as layered steel,
+        // rather than a flat fill with decorative border lines.
+        handle.DrawRect(new UIBox2(box.Left + w * 0.025f, box.Top + h * 0.18f,
+            box.Left + w * 0.34f, box.Top + h * 0.43f), new Color(29, 36, 35));
+        handle.DrawRect(new UIBox2(box.Left + w * 0.62f, box.Top + h * 0.56f,
+            box.Right - w * 0.025f, box.Bottom - h * 0.12f), new Color(22, 29, 29));
+        handle.DrawLine(new Vector2(box.Left + w * 0.035f, box.Top + h * 0.44f),
+            new Vector2(box.Right - w * 0.035f, box.Top + h * 0.44f), new Color(12, 18, 18));
+        handle.DrawLine(new Vector2(box.Left + w * 0.035f, box.Top + h * 0.445f),
+            new Vector2(box.Right - w * 0.035f, box.Top + h * 0.445f), new Color(66, 72, 66));
+
+        // Fine pitted grain and oil-darkened flecks. Integer modular sequences keep
+        // every plate deterministic and avoid per-frame random allocations.
+        for (var i = 0; i < 112; i++)
+        {
+            var xSeed = (i * 47 + 13) % 101;
+            var ySeed = (i * 31 + 59) % 103;
+            var x = box.Left + w * (0.025f + xSeed / 105f * 0.95f);
+            var y = box.Top + h * (0.035f + ySeed / 108f * 0.93f);
+            var radius = (0.35f + (i % 5) * 0.16f) * scale;
+            var fleck = i % 11 == 0 ? new Color(106, 58, 37)
+                : i % 4 == 0 ? new Color(12, 17, 17)
+                : i % 3 == 0 ? new Color(65, 72, 68)
+                : new Color(35, 43, 41);
+            handle.DrawCircle(new Vector2(x, y), radius, fleck, true);
+        }
+
+        // Oily wipe marks and shallow brushed arcs catch the light at an angle.
+        var wipes = new (float X, float Y, float L, float S)[]
+        {
+            (0.06f, 0.31f, 0.22f, -0.018f), (0.49f, 0.16f, 0.29f, 0.012f),
+            (0.57f, 0.68f, 0.31f, -0.014f), (0.18f, 0.84f, 0.25f, 0.010f),
+            (0.70f, 0.39f, 0.19f, 0.016f),
+        };
+        foreach (var wipe in wipes)
+        {
+            var start = new Vector2(box.Left + w * wipe.X, box.Top + h * wipe.Y);
+            var end = start + new Vector2(w * wipe.L, h * wipe.S);
+            handle.DrawLine(start + new Vector2(0f, 2f * scale),
+                end + new Vector2(0f, 2f * scale), new Color(13, 18, 18));
+            handle.DrawLine(start, end, new Color(55, 63, 60));
+        }
         for (var row = 0; row < 9; row++)
         {
             var y = box.Top + h * (0.10f + row * 0.095f);
