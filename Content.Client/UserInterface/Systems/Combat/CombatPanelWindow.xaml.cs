@@ -361,9 +361,11 @@ public sealed partial class CombatPanelWindow : BaseWindow
             };
             label.StyleClasses.Add("LabelSmall");
             var value = severity.ToLowerInvariant();
-            label.FontColorOverride = value.Contains("тяж") || value.Contains("крит") || value.Contains("смерт")
+            label.FontColorOverride = value.Contains("тяж") || value.Contains("крит")
+                || value.Contains("severe") || value.Contains("critical") || value.Contains("major")
                 ? new Color(177, 78, 61)
                 : value.Contains("сред") || value.Contains("умер")
+                    || value.Contains("moderate") || value.Contains("medium")
                     ? new Color(190, 145, 83)
                     : new Color(178, 178, 151);
             BodyPartStatusContainer.AddChild(label);
@@ -390,9 +392,14 @@ public sealed partial class CombatPanelWindow : BaseWindow
     private static void SetTabButtonActive(CombatPanelButton button, bool active)
     {
         if (active)
-            button.StyleClasses.Add("CombatTabActive");
+        {
+            if (!button.StyleClasses.Contains("CombatTabActive"))
+                button.StyleClasses.Add("CombatTabActive");
+        }
         else
+        {
             button.StyleClasses.Remove("CombatTabActive");
+        }
     }
 
     public void SetAvailableActions(bool hasGun, bool hasMeleeWeapon)
