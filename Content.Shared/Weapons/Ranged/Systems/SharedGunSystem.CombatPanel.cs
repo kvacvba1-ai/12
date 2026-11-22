@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Events;
 
 namespace Content.Shared.Weapons.Ranged.Systems;
@@ -38,6 +39,21 @@ public abstract partial class SharedGunSystem
             if (ammoEntity is not { } ammo || TerminatingOrDeleted(ammo))
                 continue;
 
+            // Cartridge weapons keep their normal spent-shell behavior.
+            if (TryComp<CartridgeAmmoComponent>(ammo, out var cartridge))
+            {
+                SetCartridgeSpent(ammo, cartridge, true);
+
+                if (cartridge.DeleteOnSpawn)
+                    Del(ammo);
+                else if (!Containers.IsEntityInContainer(ammo))
+                    EjectCartridge(ammo);
+
+                Dirty(ammo, cartridge);
+                continue;
+            }
+
+            // Entity and hitscan providers return disposable ammunition entities.
             Del(ammo);
         }
 
