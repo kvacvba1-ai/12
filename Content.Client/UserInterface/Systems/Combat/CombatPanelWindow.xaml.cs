@@ -110,6 +110,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
             CornerRadius = 11f,
         };
         WindowHeader.PanelOverride = steelFrame;
+        TabNavigationFrame.PanelOverride = steelFrame;
         HeaderFrame.PanelOverride = steelFrame;
         ActionFrame.PanelOverride = insetFrame;
         TargetZoneFrame.PanelOverride = bloodFrame;
