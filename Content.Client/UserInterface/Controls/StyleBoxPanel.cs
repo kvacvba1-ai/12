@@ -55,6 +55,7 @@ public sealed class StyleBoxPanel : StyleBox
             MathF.Max(inner.Left + 1f * uiScale, inner.Right - 1f * uiScale),
             MathF.Max(inner.Top + 1f * uiScale, inner.Bottom - 1f * uiScale));
         DrawRoundedRect(handle, content, MathF.Max(0f, innerRadius - uiScale), BackgroundColor);
+        DrawSurfaceTexture(handle, content, uiScale);
 
         // Fine machined lip and a dark recessed seam make the plate read as layered steel.
         var lineY = inner.Top + MathF.Max(2f, innerRadius * 0.45f);
@@ -116,6 +117,67 @@ public sealed class StyleBoxPanel : StyleBox
         };
     }
 
+    private void DrawSurfaceTexture(DrawingHandleScreen handle, UIBox2 box, float scale)
+    {
+        // A fixed procedural brushed-metal grain. The pattern is stable between frames.
+        var w = box.Width;
+        var h = box.Height;
+        var grainA = new Color(43, 51, 49);
+        var grainB = new Color(17, 23, 23);
+        for (var row = 0; row < 9; row++)
+        {
+            var y = box.Top + h * (0.10f + row * 0.095f);
+            handle.DrawLine(new Vector2(box.Left + w * 0.035f, y),
+                new Vector2(box.Right - w * 0.035f, y + ((row % 3) - 1) * scale), grainA);
+            handle.DrawLine(new Vector2(box.Left + w * 0.08f, y + 1.5f * scale),
+                new Vector2(box.Right - w * 0.08f, y + 1.5f * scale), grainB);
+        }
+
+        // Uneven pits and tiny oxidation blooms across the plate, not only on its border.
+        for (var i = 0; i < 72; i++)
+        {
+            var xSeed = (i * 37 + 17) % 97;
+            var ySeed = (i * 53 + 29) % 89;
+            var x = box.Left + w * (0.035f + xSeed / 100f * 0.93f);
+            var y = box.Top + h * (0.045f + ySeed / 100f * 0.91f);
+            var radius = (0.45f + (i % 4) * 0.22f) * scale;
+            var color = i % 4 == 0 ? RustColor : i % 3 == 0 ? grainB : grainA;
+            handle.DrawCircle(new Vector2(x, y), radius, color, true);
+        }
+
+        // Long, shallow abrasion marks with broken highlights and dark undersides.
+        var scratches = new (float X, float Y, float L, float S)[]
+        {
+            (0.08f, 0.19f, 0.11f, 0.018f), (0.72f, 0.14f, 0.16f, -0.012f),
+            (0.22f, 0.42f, 0.07f, 0.009f), (0.81f, 0.57f, 0.10f, -0.014f),
+            (0.12f, 0.78f, 0.13f, -0.016f), (0.58f, 0.87f, 0.18f, 0.012f),
+            (0.43f, 0.29f, 0.05f, -0.009f), (0.91f, 0.34f, 0.045f, 0.015f),
+        };
+        foreach (var scratch in scratches)
+        {
+            var start = new Vector2(box.Left + w * scratch.X, box.Top + h * scratch.Y);
+            var end = start + new Vector2(w * scratch.L, h * scratch.S);
+            handle.DrawLine(start + new Vector2(0, scale), end + new Vector2(0, scale), grainB);
+            handle.DrawLine(start, end, ScratchColor);
+        }
+
+        // Corrosion blooms collect near seams and fasteners.
+        for (var i = 0; i < 18; i++)
+        {
+            var side = i % 4;
+            var t = ((i * 29 + 11) % 83) / 100f;
+            var p = side switch
+            {
+                0 => new Vector2(box.Left + w * t, box.Top + h * 0.035f),
+                1 => new Vector2(box.Right - w * 0.035f, box.Top + h * t),
+                2 => new Vector2(box.Left + w * t, box.Bottom - h * 0.035f),
+                _ => new Vector2(box.Left + w * 0.035f, box.Top + h * t),
+            };
+            handle.DrawCircle(p, (1.1f + i % 3) * scale, RustColor, true);
+            handle.DrawCircle(p + new Vector2(2f, 1f) * scale, 0.8f * scale, new Color(181, 103, 55), true);
+        }
+    }
+
     private void DrawWear(DrawingHandleScreen handle, UIBox2 box, float scale)
     {
         // Fixed, deliberately irregular marks: no per-frame randomness or flicker.
@@ -153,20 +215,43 @@ public sealed class StyleBoxPanel : StyleBox
 
     private void DrawBlood(DrawingHandleScreen handle, UIBox2 box, float scale)
     {
-        // Restrained dried smears stay close to the plate edge and never cover content.
+        // Irregular dried splashes and dragged smears, concentrated around plate edges.
         var w = box.Width;
         var h = box.Height;
-        var upper = new Vector2(box.Right - w * 0.13f, box.Top + h * 0.075f);
-        handle.DrawCircle(upper, 3.2f * scale, BloodColor, true);
-        handle.DrawCircle(upper + new Vector2(-5f, 2f) * scale, 2f * scale, BloodColor, true);
-        handle.DrawLine(upper + new Vector2(1f, 2f) * scale,
-            upper + new Vector2(-2f, 9f) * scale, BloodColor);
-        handle.DrawLine(upper + new Vector2(-3f, 4f) * scale,
-            upper + new Vector2(-7f, 8f) * scale, BloodColor);
+        var darkBlood = BloodColor;
+        var driedEdge = new Color(66, 18, 20);
+        var upper = new Vector2(box.Right - w * 0.16f, box.Top + h * 0.10f);
 
-        var lower = new Vector2(box.Left + w * 0.10f, box.Bottom - h * 0.07f);
-        handle.DrawCircle(lower, 2.4f * scale, BloodColor, true);
-        handle.DrawLine(lower, lower + new Vector2(4f, 7f) * scale, BloodColor);
+        handle.DrawCircle(upper, 6.5f * scale, driedEdge, true);
+        handle.DrawCircle(upper + new Vector2(-4f, 1f) * scale, 4.2f * scale, darkBlood, true);
+        handle.DrawCircle(upper + new Vector2(5f, 3f) * scale, 2.7f * scale, darkBlood, true);
+        handle.DrawCircle(upper + new Vector2(-8f, 5f) * scale, 1.8f * scale, darkBlood, true);
+        handle.DrawLine(upper + new Vector2(0f, 4f) * scale,
+            upper + new Vector2(-3f, 19f) * scale, driedEdge);
+        handle.DrawLine(upper + new Vector2(-2f, 6f) * scale,
+            upper + new Vector2(-5f, 15f) * scale, darkBlood);
+        handle.DrawLine(upper + new Vector2(4f, 5f) * scale,
+            upper + new Vector2(8f, 13f) * scale, darkBlood);
+
+        var lower = new Vector2(box.Left + w * 0.13f, box.Bottom - h * 0.11f);
+        handle.DrawCircle(lower, 5.5f * scale, driedEdge, true);
+        handle.DrawCircle(lower + new Vector2(3f, -1f) * scale, 3.4f * scale, darkBlood, true);
+        handle.DrawCircle(lower + new Vector2(-5f, -3f) * scale, 2.1f * scale, darkBlood, true);
+        handle.DrawLine(lower + new Vector2(2f, -1f) * scale,
+            lower + new Vector2(11f, -8f) * scale, darkBlood);
+
+        // Fine droplets around the two larger stains.
+        var droplets = new (float X, float Y, float R)[]
+        {
+            (0.79f, 0.045f, 1.5f), (0.83f, 0.075f, 1.0f), (0.88f, 0.13f, 1.3f),
+            (0.11f, 0.84f, 1.2f), (0.17f, 0.89f, 0.9f), (0.21f, 0.81f, 1.1f),
+            (0.94f, 0.77f, 1.4f), (0.90f, 0.82f, 0.8f),
+        };
+        foreach (var drop in droplets)
+        {
+            var point = new Vector2(box.Left + w * drop.X, box.Top + h * drop.Y);
+            handle.DrawCircle(point, drop.R * scale, darkBlood, true);
+        }
     }
 
     private void DrawHazardStripe(DrawingHandleScreen handle, UIBox2 box, float scale)
