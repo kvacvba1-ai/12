@@ -327,9 +327,11 @@ public sealed partial class ChatSystem : SharedChatSystem
                 SendEntityWhisper(source, message, range, null, nameOverride, language, hideLog, ignoreActionBlocker, colorOverride); // Goob edit & Einstein Engines - Language
                 break;
             case InGameICChatType.Emote:
-                // TRENCHFACE: resolve combat-panel emotes on the server so damage is real and authoritative.
-                if (player != null)
-                    ApplyCombatPanelEmoteDamage(source, message);
+                // TRENCHFACE: resolve combat-panel attacks before displaying the RP emote.
+                // The chat pipeline may invoke this method without a session object for
+                // internally forwarded messages; the source entity and strict combat-emote
+                // parser are the authority here, not the optional player parameter.
+                ApplyCombatPanelEmoteDamage(source, message);
                 SendEntityEmote(source, message, range, nameOverride, language, hideLog: hideLog, ignoreActionBlocker: ignoreActionBlocker, forced: forced); // Einstein Engines - Language
                 break;
             case InGameICChatType.Telepathic:
