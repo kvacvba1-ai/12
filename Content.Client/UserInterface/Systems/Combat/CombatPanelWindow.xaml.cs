@@ -910,7 +910,10 @@ public sealed partial class CombatPanelWindow : BaseWindow
             ? $"{_pendingAttackMessage} (попаданий: {_ringSuccesses}/{RingAttemptsPerAttack}; {quality})"
             : $"{_pendingAttackMessage} (результат мини-игры: {quality})";
 
-        if (!_ringMiniGame && !forceMiss && (quality is "идеально" or "удачно"))
+        if (_pendingTreatmentType == null
+            && !_ringMiniGame
+            && !forceMiss
+            && (quality is "идеально" or "удачно"))
             AttackSoundRequested?.Invoke(false);
         _miniGameActive = false;
         _miniGameResolved = true;
