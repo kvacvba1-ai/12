@@ -167,10 +167,6 @@ namespace Content.Client.Hands.Systems
         }
 
         /// <summary>
-        ///     Called when a user clicks on the little "activation" icon in the hands GUI. This is currently only used
-        ///     by storage (backpacks, etc).
-        /// </summary>
-        /// <summary>
         /// Requests normal in-hand use for an item in the specified hand.
         /// The request is sent through the same predictive network events as the hands UI.
         /// </summary>
@@ -188,6 +184,10 @@ namespace Content.Client.Hands.Systems
             return true;
         }
 
+        /// <summary>
+        ///     Called when a user clicks on the little "activation" icon in the hands GUI. This is currently only used
+        ///     by storage (backpacks, etc).
+        /// </summary>
         public void UIHandActivate(string handName)
         {
             RaisePredictiveEvent(new RequestActivateInHandEvent(handName));
