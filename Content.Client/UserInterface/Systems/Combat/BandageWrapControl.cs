@@ -70,10 +70,12 @@ public sealed class BandageWrapControl : Control
     protected override void KeyBindUp(GUIBoundKeyEventArgs args)
     {
         base.KeyBindUp(args);
-        if (args.Function != EngineKeyFunctions.UIClick || args.State != BoundKeyState.Up)
+        if (args.Function != EngineKeyFunctions.UIClick || args.State != BoundKeyState.Up || !_dragging)
             return;
 
         _dragging = false;
+        if (UserInterfaceManager.ControlFocused == this)
+            UserInterfaceManager.ControlFocused = null;
         args.Handle();
     }
 
