@@ -55,7 +55,7 @@ public sealed class BandageWrapControl : Control
             return;
 
         var pointer = args.RelativePixelPosition;
-        var center = PixelSize / 2f;
+        var center = (Vector2) PixelSize / 2f;
         var roll = GetRollPosition(center, _progress);
         if (Vector2.DistanceSquared(pointer, roll) > GrabRadius * GrabRadius)
             return;
