@@ -9,6 +9,7 @@ using Content.Shared.Inventory;
 using Content.Shared.Medical.Healing;
 using Content.Shared._Shitmed.Targeting;
 using Content.Shared.Hands.Components;
+using Content.Shared.Storage;
 
 namespace Content.Server.Combat;
 
@@ -47,7 +48,30 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
         // backpack slot, hands and worn inventory slots; arbitrary world entities
         // cannot be injected or consumed through a forged network request.
         Entity<HandsComponent?, InventoryComponent?> inventoryOwner = (user, null, null);
-        if (!_inventory.GetHandOrInventoryEntities(inventoryOwner).Contains(itemUid))
+        var pendingItems = new Queue<EntityUid>(_inventory.GetHandOrInventoryEntities(inventoryOwner));
+        var visitedItems = new HashSet<EntityUid>();
+        var itemIsCarried = false;
+
+        // Include nested backpacks and storage containers, matching the client inventory scan.
+        while (pendingItems.TryDequeue(out var carriedItem))
+        {
+            if (!visitedItems.Add(carriedItem) || !EntityManager.EntityExists(carriedItem))
+                continue;
+
+            if (carriedItem == itemUid)
+            {
+                itemIsCarried = true;
+                break;
+            }
+
+            if (!TryComp<StorageComponent>(carriedItem, out var storage))
+                continue;
+
+            foreach (var contained in storage.Container.ContainedEntities)
+                pendingItems.Enqueue(contained);
+        }
+
+        if (!itemIsCarried)
             return;
 
         switch (message.Treatment)
@@ -63,7 +87,7 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
                     && HasComp<BodyComponent>(targetUid)
                     && HasComp<HealingComponent>(itemUid))
                 {
-                    _healing.TryStartCombatPanelHealing(user, targetUid, itemUid, message.Part);
+                    _healing.TryHealFromCombatPanel(user, targetUid, itemUid, message.Part);
                 }
                 break;
 
