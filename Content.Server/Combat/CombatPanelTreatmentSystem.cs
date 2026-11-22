@@ -31,7 +31,7 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
 
     private void OnTreatmentRequested(CombatPanelTreatmentEvent message, EntitySessionEventArgs args)
     {
-        if (message.Quality == CombatPanelTreatmentQuality.Miss
+        if (message.Quality is not (CombatPanelTreatmentQuality.Good or CombatPanelTreatmentQuality.Perfect)
             || args.SenderSession.AttachedEntity is not { } user
             || !EntityManager.EntityExists(user)
             || !TryGetEntity(message.Target, out var target)
