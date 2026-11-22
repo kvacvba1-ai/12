@@ -49,7 +49,10 @@ public sealed partial class CombatPanelWindow : BaseWindow
     public CombatPanelWindow()
     {
         RobustXamlLoader.Load(this);
-        MouseFilter = MouseFilterMode.Stop;
+        // Let child controls process clicks first; the window only consumes otherwise-unhandled input.
+        MouseFilter = MouseFilterMode.Pass;
+        TabContainer.TabsVisible = false;
+        TabContainer.CurrentTab = 0;
         Resizable = true;
         MinSize = new Vector2(620, 660);
         CloseWindowButton.OnPressed += _ => Close();
@@ -107,6 +110,7 @@ public sealed partial class CombatPanelWindow : BaseWindow
             CornerRadius = 11f,
         };
         WindowHeader.PanelOverride = steelFrame;
+        TabNavigationFrame.PanelOverride = steelFrame;
         HeaderFrame.PanelOverride = steelFrame;
         ActionFrame.PanelOverride = insetFrame;
         TargetZoneFrame.PanelOverride = bloodFrame;
@@ -119,6 +123,11 @@ public sealed partial class CombatPanelWindow : BaseWindow
         TabContainer.SetTabTitle(CombatTab, "Действия");
         TabContainer.SetTabTitle(StatusTab, "Состояние");
         TabContainer.SetTabTitle(EquipmentTab, "Снаряжение");
+
+        ActionsTabButton.OnPressed += _ => SelectTab(0);
+        StatusTabButton.OnPressed += _ => SelectTab(1);
+        EquipmentTabButton.OnPressed += _ => SelectTab(2);
+        UpdateTabButtonHighlights();
 
         ShootButton.OnPressed += _ => SelectAction("shoots");
         StabButton.OnPressed += _ => SelectAction("stabs");
@@ -157,6 +166,33 @@ public sealed partial class CombatPanelWindow : BaseWindow
                 ? "Скрыть боеприпасы"
                 : "Показать боеприпасы";
         };
+    }
+
+    private void SelectTab(int tab)
+    {
+        if (tab < 0 || tab >= TabContainer.ChildCount)
+            return;
+
+        TabContainer.CurrentTab = tab;
+        UpdateTabButtonHighlights();
+    }
+
+    private void UpdateTabButtonHighlights()
+    {
+        var buttons = new[]
+        {
+            (ActionsTabButton, 0),
+            (StatusTabButton, 1),
+            (EquipmentTabButton, 2),
+        };
+
+        foreach (var (button, tab) in buttons)
+        {
+            if (TabContainer.CurrentTab == tab)
+                button.StyleClasses.Add("positive");
+            else
+                button.StyleClasses.Remove("positive");
+        }
     }
 
     // The header is our own hit-test region. BaseWindow supplies the actual drag/resize machinery.
