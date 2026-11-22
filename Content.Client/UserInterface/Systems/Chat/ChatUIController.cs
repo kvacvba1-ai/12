@@ -35,6 +35,7 @@ using Content.Shared._Shitmed.Targeting;
 using Content.Shared._Shitmed.Medical.Surgery.Wounds;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
+using Content.Shared.Medical.Healing;
 using Content.Shared.Weapons.Melee;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Damage.ForceSay;
@@ -1352,14 +1353,20 @@ public sealed partial class ChatUIController : UIController
                 return;
 
             var itemName = Identity.Name(item, _ent);
-            if (IsMedicalSupply(itemName.ToLowerInvariant()))
+            // Only expose real healing items that are currently held. HealingSystem
+            // handles UseInHandEvent and performs the actual self-treatment, including
+            // body-part wounds, bruises and burns.
+            if (_ent.HasComponent<HealingComponent>(item)
+                && TryGetCombatPanelHand(user, item, out var medicalHand))
             {
                 var capturedName = itemName;
                 var capturedItem = item;
+                var capturedHand = medicalHand;
                 items.Add((itemName, () =>
                 {
                     if (_player.LocalEntity is not { } currentUser
-                        || !IsCombatPanelItemAvailable(currentUser, capturedItem))
+                        || !IsCombatPanelItemAvailable(currentUser, capturedItem)
+                        || !_ent.System<HandsSystem>().RequestUseItemInHand(currentUser, capturedHand))
                         return;
 
                     _combatPanelWindow?.TryRequestEmote(
@@ -1370,6 +1377,25 @@ public sealed partial class ChatUIController : UIController
             if (_ent.HasComponent<StorageComponent>(item))
                 pendingStorage.Enqueue(item);
         }
+    }
+
+    private bool TryGetCombatPanelHand(EntityUid user, EntityUid item, out string handId)
+    {
+        handId = string.Empty;
+        if (!_ent.TryGetComponent<HandsComponent>(user, out var hands))
+            return false;
+
+        var handsSystem = _ent.System<HandsSystem>();
+        foreach (var candidate in hands.Hands.Keys)
+        {
+            if (handsSystem.GetHeldItem((user, hands), candidate) != item)
+                continue;
+
+            handId = candidate;
+            return true;
+        }
+
+        return false;
     }
 
     private bool IsCombatPanelItemAvailable(EntityUid user, EntityUid item)
