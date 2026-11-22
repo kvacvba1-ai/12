@@ -42,6 +42,19 @@ public abstract partial class SharedGunSystem
             // Cartridge weapons keep their normal spent-shell behavior.
             if (TryComp<CartridgeAmmoComponent>(ammo, out var cartridge))
             {
+                // Bolt-action / manually cycled weapons can return the same
+                // spent shell while it is still in the chamber. Never treat
+                // that casing as another live round.
+                if (cartridge.Spent)
+                {
+                    if (!Containers.IsEntityInContainer(ammo))
+                        EjectCartridge(ammo);
+
+                    RaiseLocalEvent(gun, new OnEmptyGunShotEvent(user));
+                    UpdateAmmoCount(gun);
+                    return false;
+                }
+
                 SetCartridgeSpent(ammo, cartridge, true);
 
                 if (cartridge.DeleteOnSpawn)
