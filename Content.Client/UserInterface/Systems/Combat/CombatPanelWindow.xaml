@@ -31,13 +31,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
             </BoxContainer>
         </PanelContainer>
 
-        <PanelContainer Name="TabNavigationFrame" HorizontalExpand="True">
-            <GridContainer Columns="3" Margin="4" HorizontalExpand="True">
-                <Button Name="ActionsTabButton" Text="01 // ДЕЙСТВИЯ" />
-                <Button Name="StatusTabButton" Text="02 // СОСТОЯНИЕ" />
-                <Button Name="EquipmentTabButton" Text="03 // СНАРЯЖЕНИЕ" />
-            </GridContainer>
-        </PanelContainer>
         <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True">
             <PanelContainer Name="CombatTab" StyleClasses="BackgroundDark" HorizontalExpand="True">
                 <ScrollContainer VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False">
