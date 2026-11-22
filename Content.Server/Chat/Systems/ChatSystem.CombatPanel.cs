@@ -37,10 +37,9 @@ public sealed partial class ChatSystem
 
         var damage = new DamageSpecifier(_prototypeManager.Index<DamageTypePrototype>(damageType), damageAmount);
 
-        // Use the same damage route as surgery: apply damage to the root body
-        // and let DamageableSystem resolve the selected BodyPartComponent into
-        // the engine's native TargetBodyPart routing. This is the path used by
-        // SurgerySystem.SetDamage and keeps damage, wounds and BodyStatus in sync.
+        // Use the engine's native body-part damage route: apply damage to the
+        // root body and let DamageableSystem resolve the selected BodyPartComponent
+        // into its TargetBodyPart. This keeps damage, wounds and BodyStatus in sync.
         var bodyPartQuery = _combatBody.ConvertTargetBodyPart(targetPart);
         var targetParts = _combatBody.GetBodyChildrenOfType(
             target,
