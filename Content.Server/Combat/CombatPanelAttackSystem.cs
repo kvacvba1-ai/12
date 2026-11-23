@@ -104,9 +104,11 @@ public sealed class CombatPanelAttackSystem : EntitySystem
 
         // A role-play shot consumes one real round from the held gun, but never
         // invokes the firing pipeline and therefore never creates a projectile.
-        if (message.AttackType == CombatPanelAttackType.Shoot
-            && !_guns.TryConsumeAmmoWithoutFiring(attacker))
-            return;
+        // Resolve and apply the confirmed hit independently of the optional ammo-provider
+        // bookkeeping. Ammo extraction is attempted, but a provider that cannot expose
+        // its round through TakeAmmoEvent must never silently cancel an otherwise valid hit.
+        if (message.AttackType == CombatPanelAttackType.Shoot)
+            _guns.TryConsumeAmmoWithoutFiring(attacker);
 
         // Resolve the exact limb first; never route an explicit limb hit through the mob root.
         var (partUid, _, partDamageable) = parts[0];

@@ -21,16 +21,9 @@ namespace Content.Server.Combat;
 public sealed class CombatPanelTreatmentSystem : EntitySystem
 {
     private const float ChallengeTimeoutSeconds = 8f;
-    private const float RingRotationSpeed = MathF.PI;
-    private const float RingSectorHalfWidth = 0.32f; // Includes a small allowance for network latency.
     private const float InjectionMarkerSpeed = 1.65f;
-    private const int BandageAttempts = 2;
-
-    private static readonly float[] RingTargetAngles =
-    {
-        MathF.PI * 7f / 6f,
-        MathF.PI * 25f / 18f,
-    };
+    private const float BandagePerfectHalfWidth = 0.07f;
+    private const float BandageGoodHalfWidth = 0.20f;
 
     [Dependency] private readonly InventorySystem _inventory = default!;
     [Dependency] private readonly HealingSystem _healing = default!;
@@ -141,50 +134,26 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
             return;
         }
 
-        if (message.Treatment == CombatPanelTreatmentType.Bandage)
-        {
-            if (challenge.Attempts >= BandageAttempts)
-                return;
-
-            var angle = MathF.Min((float) elapsed * RingRotationSpeed, MathF.Tau);
-            for (var i = 0; i < RingTargetAngles.Length; i++)
-            {
-                if (challenge.HitSectors.Contains(i))
-                    continue;
-
-                var delta = MathF.Abs(MathF.IEEERemainder(angle - RingTargetAngles[i], MathF.Tau));
-                if (delta <= RingSectorHalfWidth)
-                    challenge.HitSectors.Add(i);
-            }
-
-            challenge.Attempts++;
-            if (challenge.Attempts < BandageAttempts)
-                return;
-
-            var quality = challenge.HitSectors.Count >= BandageAttempts
-                ? CombatPanelTreatmentQuality.Perfect
-                : challenge.HitSectors.Count == 1
-                    ? CombatPanelTreatmentQuality.Good
-                    : CombatPanelTreatmentQuality.Miss;
-
-            _challenges.Remove(user);
-            ApplyTreatment(user, target, item, message.Part, message.Treatment, quality);
-            return;
-        }
-
-        // The injection marker moves from 0 to 1 and back at the same speed as the UI.
-        // Its position is reconstructed from server time; no client-supplied quality is trusted.
+        // Bandaging and injection use the dedicated medical timing bar, not the
+        // firearm's rotating hit-sector/ring mechanic. Reconstruct its marker from
+        // server time and validate the click independently of client-reported quality.
         var phase = (float) elapsed * InjectionMarkerSpeed % 2f;
         var markerPosition = 1f - MathF.Abs(phase - 1f);
         var distance = MathF.Abs(markerPosition - 0.5f);
-        var injectionQuality = distance <= 0.04f
-            ? CombatPanelTreatmentQuality.Perfect
-            : distance <= 0.12f
-                ? CombatPanelTreatmentQuality.Good
-                : CombatPanelTreatmentQuality.Miss;
+        var quality = message.Treatment == CombatPanelTreatmentType.Bandage
+            ? distance <= BandagePerfectHalfWidth
+                ? CombatPanelTreatmentQuality.Perfect
+                : distance <= BandageGoodHalfWidth
+                    ? CombatPanelTreatmentQuality.Good
+                    : CombatPanelTreatmentQuality.Miss
+            : distance <= 0.04f
+                ? CombatPanelTreatmentQuality.Perfect
+                : distance <= 0.12f
+                    ? CombatPanelTreatmentQuality.Good
+                    : CombatPanelTreatmentQuality.Miss;
 
         _challenges.Remove(user);
-        ApplyTreatment(user, target, item, message.Part, message.Treatment, injectionQuality);
+        ApplyTreatment(user, target, item, message.Part, message.Treatment, quality);
     }
 
     private bool CanPerformTreatment(EntityUid target, EntityUid item, CombatPanelTreatmentType treatment)
@@ -269,7 +238,6 @@ public sealed class CombatPanelTreatmentSystem : EntitySystem
         public TargetBodyPart Part { get; } = part;
         public CombatPanelTreatmentType Treatment { get; } = treatment;
         public TimeSpan StartedAt { get; } = startedAt;
-        public int Attempts { get; set; }
-        public HashSet<int> HitSectors { get; } = new();
+
     }
 }
