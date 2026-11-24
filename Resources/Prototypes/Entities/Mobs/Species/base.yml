@@ -263,10 +263,6 @@
   - type: VisibleContraband # Goobstation
   - type: MomentumSteering # Goobstation - No steer
   - type: DirectionalEmote # Erida
-  # Erida start
-  - type: ExamineNotice
-  - type: TemporaryStatus
-  # Erida end
 
 - type: entity
   save: false
